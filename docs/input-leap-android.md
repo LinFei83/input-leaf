@@ -1,61 +1,96 @@
 # Input Leap on Android: Control an Android Phone with a PC Mouse and Keyboard
 
-Input Leaf is an open-source Android client for [Input Leap](https://github.com/input-leap/input-leap). It lets an Android phone or tablet participate in an Input Leap software-KVM setup so a computer's mouse and keyboard can be used on Android over the local network.
+**Input Leaf** is an open-source Android client for [Input Leap](https://github.com/input-leap/input-leap). It lets an Android phone or tablet participate in an Input Leap software-KVM setup so your computer's mouse and keyboard can seamlessly control your Android device over the local network.
 
-## What you need
+## Official Input Leap Links
 
-- A Windows, macOS, or Linux computer running Input Leap.
-- An Android phone or tablet on the same local network.
-- Input Leaf installed on Android.
-- Either Shizuku or Android Accessibility mode for input injection.
+- **Official Repository:** [github.com/input-leap/input-leap](https://github.com/input-leap/input-leap)
+- **Releases & Downloads (Windows, macOS, Linux):** [Input Leap Releases](https://github.com/input-leap/input-leap/releases)
+- **Official Documentation:** [Input Leap Wiki](https://github.com/input-leap/input-leap/wiki)
 
-## How the setup works
+---
+
+## What You Need
+
+- A Windows, macOS, or Linux computer running the [Input Leap Server](https://github.com/input-leap/input-leap/releases).
+- An Android phone or tablet connected to the same local network (Wi-Fi or Ethernet).
+- [Input Leaf APK](https://github.com/anasvhora284/input-leaf/releases/latest) installed on your Android device.
+- Either [Shizuku](https://shizuku.rikka.app/) (recommended for lowest latency) or stock Android Accessibility mode.
+
+---
+
+## How the Setup Works
 
 ```text
-PC / Laptop
-Input Leap server
-      │
-      │  Wi-Fi / Ethernet LAN
-      ▼
-Android phone / tablet
-Input Leaf client
+┌─────────────────────────────────┐
+│           PC / Laptop           │
+│        Input Leap Server        │
+└────────────────┬────────────────┘
+                 │
+                 │  Wi-Fi / Ethernet LAN (TCP Port 24800)
+                 │  Shared Mouse Coordinates & Keystrokes
+                 ▼
+┌─────────────────────────────────┐
+│     Android Phone / Tablet      │
+│        Input Leaf Client        │
+└─────────────────────────────────┘
 ```
 
-Input Leap handles the shared mouse and keyboard session on the computer side. Input Leaf receives the input on Android and injects it using the selected Android input method.
+Input Leap runs on your PC as the server, capturing your mouse and keyboard when your cursor hits the edge of the monitor. Input Leaf runs on Android as the client, receiving the input stream and injecting it as native Android touches, pointer movements, and keystrokes.
 
-## Setup
+---
 
-1. Install [Input Leap](https://github.com/input-leap/input-leap) on your computer.
-2. Configure the Android device as a screen/client in Input Leap.
-3. Install the [latest Input Leaf APK](https://github.com/anasvhora284/input-leaf/releases/latest).
-4. Put the computer and Android device on the same LAN/Wi-Fi network.
-5. Open Input Leaf and follow the setup wizard.
-6. Choose Shizuku for the best system-level input experience, or Accessibility mode for a simpler no-extra-app setup.
-7. Connect to the Input Leap server.
-8. Move the computer cursor across the configured screen edge to switch control to Android.
+## Step-by-Step Setup
 
-## Shizuku or Accessibility?
+1. **Install Input Leap on PC:** Download the installer for Windows, macOS, or Linux from [Input Leap Releases](https://github.com/input-leap/input-leap/releases).
+2. **Configure Server Mode:**
+   - Open Input Leap on your PC and select **Server (share this computer's mouse and keyboard)**.
+   - Click **Configure Server...** to open the interactive screen grid.
+   - Drag a new monitor icon from the top-right tray and place it next to your PC monitor (for example, to the right).
+   - Double-click the newly placed screen and set the **Screen name** to match your Android device name (viewable or editable in Input Leaf **Settings -> Screen Name**).
+   - Click **OK**, then click **Start** on the main Input Leap window.
+3. **Install Input Leaf on Android:** Download and install the latest APK from [Input Leaf GitHub Releases](https://github.com/anasvhora284/input-leaf/releases/latest).
+4. **Grant Permissions / Choose Injection Mode:**
+   - **Shizuku (Recommended):** Set up [Shizuku](https://shizuku.rikka.app/) via Wireless Debugging. Grant Input Leaf Shizuku permission for native system injection and full shortcut support (`Alt+Tab`, Home, Back).
+   - **Accessibility Mode:** If you prefer zero third-party tools, enable Input Leaf in Android **Settings -> Accessibility**.
+5. **Connect:**
+   - Ensure both devices are connected to the same Wi-Fi network.
+   - Input Leaf will discover your Input Leap server automatically via mDNS. You can also tap **+** to enter the PC's IP address directly.
+   - Tap **Connect**.
+6. **Glide to Android:** Move your mouse cursor across the configured monitor edge. The cursor will glide directly onto your Android screen!
 
-**Shizuku** is recommended when you want the closest experience to a physical mouse and keyboard, including better support for system-level keyboard shortcuts.
+---
 
-**Accessibility mode** is useful when you do not want to install Shizuku. It works through Android Accessibility APIs and a virtual keyboard, but Android system shortcuts and some hardware-level behavior are more limited.
+## Shizuku vs. Accessibility
+
+| Capability | Shizuku (Recommended) | Accessibility Mode |
+| :--- | :---: | :---: |
+| **Root Required** | No | No |
+| **Input Latency** | **Lowest (< 5ms)** | Low (~15–25ms) |
+| **System Shortcuts** | Full (`Alt+Tab`, `Meta`, `Esc`, `Ctrl+C/V`) | Basic typing only |
+| **Mouse Interaction** | Native system pointer | Gesture/touch emulation |
+| **Setup Overhead** | One-time Wireless Debugging | Immediate in Settings |
+
+---
 
 ## Troubleshooting
 
 ### Android cannot discover the Input Leap server
+- Make sure both devices are on the same local subnet / Wi-Fi band.
+- Check Windows Defender Firewall or Linux firewall (`ufw allow 24800/tcp`) to ensure port **24800** is open for inbound connections.
+- Ensure the **Screen name** in Input Leap matches the client name in Input Leaf exactly.
 
-Make sure both devices are on the same network, the Input Leap server is running, and the computer firewall allows the server connection. Input Leaf also supports manually entering a server address.
+### Mouse works, but keyboard shortcuts (like Alt+Tab) do not
+- Android restricts accessibility services from dispatching hardware-level navigation shortcuts. Switch to **Shizuku mode** for full system shortcut access.
 
-### Mouse works but keyboard shortcuts do not
+### The connection stops when the phone locks
+- Disable battery optimization for Input Leaf in Android **Settings -> Apps -> Input Leaf -> Battery -> Unrestricted**.
 
-Use Shizuku mode. Accessibility/virtual-keyboard mode cannot reproduce every hardware-level Android shortcut.
+---
 
-### The connection stops in the background
+## Downloads & Community
 
-Some Android manufacturers aggressively restrict background applications. Allow Input Leaf to run in the background and disable battery optimization for the app when necessary.
-
-## Download
-
-[Download Input Leaf for Android](https://github.com/anasvhora284/input-leaf/releases/latest)
-
-For the complete feature list and screenshots, see the [Input Leaf README](https://github.com/anasvhora284/input-leaf) or the [Input Leaf website](https://inputleaf.anasvhora.tech/).
+- **Download APK:** [Input Leaf Releases](https://github.com/anasvhora284/input-leaf/releases/latest)
+- **Website:** [inputleaf.anasvhora.tech](https://inputleaf.anasvhora.tech/)
+- **Main README:** [Input Leaf on GitHub](https://github.com/anasvhora284/input-leaf)
+- **Input Leap Upstream:** [input-leap/input-leap](https://github.com/input-leap/input-leap)
