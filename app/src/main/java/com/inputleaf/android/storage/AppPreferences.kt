@@ -32,6 +32,7 @@ class AppPreferences(private val context: Context) {
         private val KEY_LEGACY_TLS_ENABLED = booleanPreferencesKey("tls_enabled")
         private val KEY_INPUT_METHOD     = stringPreferencesKey("input_method")
         private val KEY_CURSOR_STYLE     = stringPreferencesKey("cursor_style")
+        private val KEY_LAST_SEEN_VERSION_CODE = intPreferencesKey("last_seen_version_code")
 
         /**
          * Get a sanitized device name suitable for use as screen name.
@@ -201,5 +202,12 @@ class AppPreferences(private val context: Context) {
         val lines = prefs[KEY_TRANSPORT_MODES]?.lines()?.toMutableList() ?: return@edit
         lines.removeAll { it.startsWith("$ip:") }
         prefs[KEY_TRANSPORT_MODES] = lines.joinToString("\n")
+    }
+
+    val lastSeenVersionCode: Flow<Int?> =
+        context.dataStore.data.map { it[KEY_LAST_SEEN_VERSION_CODE] }
+
+    suspend fun saveLastSeenVersionCode(versionCode: Int) = context.dataStore.edit {
+        it[KEY_LAST_SEEN_VERSION_CODE] = versionCode
     }
 }

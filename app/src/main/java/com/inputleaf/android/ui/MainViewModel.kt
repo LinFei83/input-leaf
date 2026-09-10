@@ -24,6 +24,10 @@ import com.inputleaf.android.network.ServerScanner
 import com.inputleaf.android.service.ConnectionService
 import com.inputleaf.android.storage.AppPreferences
 import com.inputleaf.android.storage.ClientCertificateStore
+import com.inputleaf.android.update.ChangelogProvider
+import com.inputleaf.android.update.UpdateCheckResult
+import com.inputleaf.android.update.UpdateService
+import com.inputleaf.android.update.VersionChangelog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -140,6 +144,34 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val _fingerprintRequest = Channel<FingerprintRequest>(1)
     val fingerprintRequest = _fingerprintRequest.receiveAsFlow()
 
+    private val _updateCheckResult = MutableStateFlow<UpdateCheckResult?>(null)
+    val updateCheckResult: StateFlow<UpdateCheckResult?> = _updateCheckResult
+
+    private val _isCheckingUpdate = MutableStateFlow(false)
+    val isCheckingUpdate: StateFlow<Boolean> = _isCheckingUpdate
+
+    private val _whatsNewChangelog = MutableStateFlow<VersionChangelog?>(null)
+    val whatsNewChangelog: StateFlow<VersionChangelog?> = _whatsNewChangelog
+
+    fun checkForUpdates(manual: Boolean = true) {
+        viewModelScope.launch {
+            _isCheckingUpdate.value = true
+            val result = UpdateService.checkUpdate(getApplication())
+            _isCheckingUpdate.value = false
+            if (manual || result is UpdateCheckResult.UpdateAvailable) {
+                _updateCheckResult.value = result
+            }
+        }
+    }
+
+    fun dismissUpdateDialog() {
+        _updateCheckResult.value = null
+    }
+
+    fun dismissWhatsNew() {
+        _whatsNewChangelog.value = null
+    }
+
     data class FingerprintRequest(
         val ip: String,
         val newFp: String,
@@ -179,8 +211,43 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun toggleMouseEnabled(enabled: Boolean) { viewModelScope.launch { prefs.saveMouseEnabled(enabled) } }
     fun toggleKeyboardEnabled(enabled: Boolean) { viewModelScope.launch { prefs.saveKeyboardEnabled(enabled) } }
     fun toggleFavoriteServer(ip: String) { viewModelScope.launch { prefs.toggleFavoriteServer(ip) } }
-    fun saveInputMethod(method: String) { viewModelScope.launch { prefs.saveInputMethod(method) } }
     fun saveCursorStyle(style: String) { viewModelScope.launch { prefs.saveCursorStyle(style) } }
+    fun saveInputMethod(method: String) {
+        viewModelScope.launch {
+            val oldMethod = prefs.inputMethod.first()
+            prefs.saveInputMethod(method)
+
+            if (oldMethod == method) return@launch
+
+            val currentIp = when (val state = _connectionState.value) {
+                is ConnectionState.Connecting -> state.serverIp
+                is ConnectionState.Handshaking -> state.serverIp
+                is ConnectionState.Idle -> state.serverIp
+                is ConnectionState.Active -> state.serverIp
+                ConnectionState.Disconnected -> null
+            } ?: return@launch
+
+            Log.i("InputLeaf", "Input method changed from $oldMethod to $method while connected to $currentIp — auto-reconnecting")
+
+            val injector = resolveInjector(preferredMethod = method)
+            if (injector == null) {
+                _errorState.value = "Selected input method is not available. Enable Shizuku or Accessibility Service."
+                disconnect()
+                return@launch
+            }
+
+            val connected = injector.connect()
+            if (!connected) {
+                _errorState.value = "Failed to connect to input method: ${injector.name}"
+                disconnect()
+                return@launch
+            }
+
+            val name = prefs.screenName.first()
+            service?.setInjector(injector)
+            service?.reconnect(currentIp, name)
+        }
+    }
     fun saveConnectionTransportPolicy(policy: ConnectionTransportPolicy) {
         viewModelScope.launch { prefs.saveConnectionTransportPolicy(policy) }
     }
@@ -257,6 +324,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private var hasAutoConnected = false
+    private var userRequestedDisconnect = false
 
     private var serviceBound = false
 
@@ -303,6 +371,26 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     init {
         bindService()
 
+        // Auto-connect when Shizuku becomes available (e.g. started after app launch or restarted)
+        viewModelScope.launch {
+            permissionProvider.shizukuAvailable.collect { available ->
+                if (available && !userRequestedDisconnect) {
+                    val auto = prefs.autoConnect.first()
+                    val lastIp = prefs.lastServerIp.first()
+                    val currentState = service?.state?.value ?: _connectionState.value
+                    if (auto && !lastIp.isNullOrBlank() && currentState is ConnectionState.Disconnected) {
+                        Log.i("InputLeaf", "Shizuku became available — auto-connecting to last server: $lastIp")
+                        if (_errorState.value?.contains("input method", ignoreCase = true) == true ||
+                            _errorState.value?.contains("Shizuku", ignoreCase = true) == true
+                        ) {
+                            _errorState.value = null
+                        }
+                        connect(ServerInfo(ip = lastIp))
+                    }
+                }
+            }
+        }
+
         viewModelScope.launch(Dispatchers.IO) {
             when (val result = clientCertificateStore.ensureGenerated()) {
                 is ClientCertificateValidationResult.Success ->
@@ -319,6 +407,21 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             prefs.showCursor.collect { enabled ->
                 service?.setCursorOverlayEnabled(enabled)
             }
+        }
+
+        // Check for version upgrade (What's New changelog)
+        viewModelScope.launch {
+            val lastSeenCode = prefs.lastSeenVersionCode.first()
+            val currentCode = UpdateService.getCurrentVersionCode(app).toInt()
+            val currentVersion = UpdateService.getCurrentVersion(app)
+
+            if (lastSeenCode != null && lastSeenCode < currentCode) {
+                _whatsNewChangelog.value = ChangelogProvider.getChangelog(currentVersion)
+            }
+            prefs.saveLastSeenVersionCode(currentCode)
+
+            // Silent update check in background
+            checkForUpdates(manual = false)
         }
     }
     fun checkShizukuStatus() = permissionProvider.checkShizukuStatus()
@@ -369,8 +472,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         _errorState.value = null
     }
 
-    private suspend fun resolveInjector(): com.inputleaf.android.inject.InputInjector? {
-        val method = prefs.inputMethod.first()
+    private suspend fun resolveInjector(preferredMethod: String? = null): com.inputleaf.android.inject.InputInjector? {
+        val method = preferredMethod ?: prefs.inputMethod.first()
         val wm = getApplication<Application>().getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager
         val bounds = wm.currentWindowMetrics.bounds
         val shizukuInjector = com.inputleaf.android.shizuku.ShizukuInputInjector(bounds.width(), bounds.height())
@@ -390,6 +493,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun connect(server: ServerInfo) {
+        userRequestedDisconnect = false
         scanJob?.cancel()
         viewModelScope.launch {
             val state = _connectionState.value
@@ -417,7 +521,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun disconnect() { service?.disconnect() }
+    fun disconnect() {
+        userRequestedDisconnect = true
+        service?.disconnect()
+    }
 
     fun addManualServer(ip: String) {
         val trimmed = ip.trim()

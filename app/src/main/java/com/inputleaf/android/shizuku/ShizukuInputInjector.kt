@@ -3,7 +3,9 @@ package com.inputleaf.android.shizuku
 import android.content.ComponentName
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.os.DeadObjectException
 import android.os.IBinder
+import android.os.RemoteException
 import android.util.Log
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -33,6 +35,8 @@ class ShizukuInputInjector(
 ) : InputInjector {
     override val name: String = "Shizuku (ADB-level injection)"
     
+    var onServiceDisconnectedCallback: (() -> Unit)? = null
+
     private var service: IInputInjector? = null
     private var isBound = false
     private var connectDeferred: CompletableDeferred<Boolean>? = null
@@ -66,9 +70,17 @@ class ShizukuInputInjector(
         
         override fun onServiceDisconnected(name: ComponentName?) {
             Log.d(TAG, "Shizuku service disconnected")
-            service = null
-            isBound = false
+            notifyDisconnected()
             connectDeferred?.complete(false)
+        }
+    }
+
+    private fun notifyDisconnected() {
+        val wasActive = isBound || service != null
+        service = null
+        isBound = false
+        if (wasActive) {
+            onServiceDisconnectedCallback?.invoke()
         }
     }
     
@@ -120,7 +132,7 @@ class ShizukuInputInjector(
      * Unbind from the Shizuku service.
      */
     override fun disconnect() {
-        if (isBound) {
+        if (isBound || service != null) {
             try {
                 service?.destroy()
                 Shizuku.unbindUserService(serviceArgs, serviceConnection, true)
@@ -210,8 +222,16 @@ class ShizukuInputInjector(
                     // Ignore non-input events
                 }
             }
+        } catch (e: DeadObjectException) {
+            Log.w(TAG, "Shizuku service binder is dead", e)
+            notifyDisconnected()
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to inject event", e)
+            if (e is RemoteException || e.cause is DeadObjectException || e.cause is RemoteException) {
+                Log.w(TAG, "Shizuku service remote exception / dead binder", e)
+                notifyDisconnected()
+            } else {
+                Log.e(TAG, "Failed to inject event", e)
+            }
         }
     }
     
