@@ -1,13 +1,13 @@
 package com.inputleaf.android.update
 
 import android.content.Context
+import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.BufferedReader
-import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -31,123 +31,59 @@ sealed interface UpdateCheckResult {
 
 object UpdateService {
 
-    private const val GITHUB_API_LATEST_RELEASE =
+    internal const val GITHUB_API_LATEST_RELEASE =
         "https://api.github.com/repos/anasvhora284/input-leaf/releases/latest"
-    private const val FDROID_MARKET_URI = "market://details?id=com.inputleaf.android"
-    private const val FDROID_WEB_URL = "https://f-droid.org/packages/com.inputleaf.android/"
-    private const val GITHUB_RELEASES_WEB_URL = "https://github.com/anasvhora284/input-leaf/releases/latest"
+    internal const val FDROID_MARKET_URI = "market://details?id=com.inputleaf.android"
+    internal const val GITHUB_RELEASES_WEB_URL =
+        "https://github.com/anasvhora284/input-leaf/releases/latest"
 
     fun getInstallSource(context: Context): InstallSource {
-        val pm = context.packageManager
-        val installer = try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                pm.getInstallSourceInfo(context.packageName).installingPackageName
-            } else {
-                @Suppress("DEPRECATION")
-                pm.getInstallerPackageName(context.packageName)
-            }
-        } catch (_: Exception) {
-            null
-        }
-
-        return when {
-            installer != null && (installer.contains("fdroid", ignoreCase = true) || installer.contains("droidify", ignoreCase = true)) ->
-                InstallSource.FDROID
-            installer != null && installer.contains("vending", ignoreCase = true) ->
-                InstallSource.PLAY_STORE
-            else ->
-                InstallSource.GITHUB
-        }
+        val installer = readInstallerPackageName(context)
+        return resolveInstallSource(installer)
     }
 
     fun getCurrentVersion(context: Context): String {
-        return try {
-            val packageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.packageManager.getPackageInfo(
-                    context.packageName,
-                    PackageManager.PackageInfoFlags.of(0)
-                )
-            } else {
-                @Suppress("DEPRECATION")
-                context.packageManager.getPackageInfo(context.packageName, 0)
-            }
-            packageInfo.versionName ?: "1.4.1"
-        } catch (_: Exception) {
-            "1.4.1"
-        }
+        return versionNameFrom(readPackageInfo(context))
     }
 
     fun getCurrentVersionCode(context: Context): Long {
-        return try {
-            val packageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.packageManager.getPackageInfo(
-                    context.packageName,
-                    PackageManager.PackageInfoFlags.of(0)
-                )
-            } else {
-                @Suppress("DEPRECATION")
-                context.packageManager.getPackageInfo(context.packageName, 0)
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                packageInfo.longVersionCode
-            } else {
-                @Suppress("DEPRECATION")
-                packageInfo.versionCode.toLong()
-            }
-        } catch (_: Exception) {
-            7L
-        }
+        return versionCodeFrom(readPackageInfo(context))
     }
 
-    suspend fun checkUpdate(context: Context): UpdateCheckResult = withContext(Dispatchers.IO) {
+    suspend fun checkUpdate(context: Context): UpdateCheckResult {
         val currentVersion = getCurrentVersion(context)
-        val installSource = getInstallSource(context)
-        val isFdroid = installSource == InstallSource.FDROID
+        val isFdroid = getInstallSource(context) == InstallSource.FDROID
+        return checkUpdate(currentVersion, isFdroid, defaultConnectionOpener)
+    }
 
+    internal suspend fun checkUpdate(
+        currentVersion: String,
+        isFdroid: Boolean,
+        openConnection: (URL) -> HttpURLConnection,
+    ): UpdateCheckResult = withContext(Dispatchers.IO) {
         try {
-            val url = URL(GITHUB_API_LATEST_RELEASE)
-            val connection = (url.openConnection() as HttpURLConnection).apply {
-                requestMethod = "GET"
-                setRequestProperty("Accept", "application/vnd.github.v3+json")
-                setRequestProperty("User-Agent", "InputLeaf-Android")
-                connectTimeout = 10000
-                readTimeout = 10000
-            }
-
+            val connection = openConnection(URL(GITHUB_API_LATEST_RELEASE))
             connection.useAndDisconnect {
                 val responseCode = responseCode
                 if (responseCode != HttpURLConnection.HTTP_OK) {
-                    return@withContext UpdateCheckResult.Error("HTTP error $responseCode from GitHub")
+                    return@withContext httpErrorResult(responseCode)
                 }
 
                 val responseBody = inputStream.bufferedReader().use(BufferedReader::readText)
-                val json = JSONObject(responseBody)
-
-                val rawTagName = json.optString("tag_name", "").trim()
-                val latestVersion = rawTagName.removePrefix("v").removePrefix("V")
-                val releaseNotes = json.optString("body", "").trim()
-                val githubHtmlUrl = json.optString("html_url", GITHUB_RELEASES_WEB_URL)
-
-                val targetUrl = if (isFdroid) {
-                    // If the user has an F-Droid client installed, market:// will open it directly
-                    FDROID_MARKET_URI
-                } else {
-                    githubHtmlUrl.ifEmpty { GITHUB_RELEASES_WEB_URL }
-                }
-
-                if (isNewerVersion(latestVersion, currentVersion)) {
-                    UpdateCheckResult.UpdateAvailable(
-                        latestVersion = latestVersion,
-                        changelog = releaseNotes,
-                        updateUrl = targetUrl,
-                        isFdroid = isFdroid
-                    )
-                } else {
-                    UpdateCheckResult.UpToDate(currentVersion)
-                }
+                parseLatestReleaseResponse(responseBody, currentVersion, isFdroid)
             }
         } catch (e: Exception) {
             UpdateCheckResult.Error(e.message ?: "Failed to check for updates")
+        }
+    }
+
+    internal val defaultConnectionOpener: (URL) -> HttpURLConnection = { url ->
+        (url.openConnection() as HttpURLConnection).apply {
+            requestMethod = "GET"
+            setRequestProperty("Accept", "application/vnd.github.v3+json")
+            setRequestProperty("User-Agent", "InputLeaf-Android")
+            connectTimeout = 10000
+            readTimeout = 10000
         }
     }
 
@@ -171,6 +107,96 @@ object UpdateService {
             if (candPart < currPart) return false
         }
         return false
+    }
+
+    private fun readInstallerPackageName(context: Context): String? {
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                context.packageManager
+                    .getInstallSourceInfo(context.packageName)
+                    .installingPackageName
+            } else {
+                @Suppress("DEPRECATION")
+                context.packageManager.getInstallerPackageName(context.packageName)
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun readPackageInfo(context: Context): PackageInfo? {
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.packageManager.getPackageInfo(
+                    context.packageName,
+                    PackageManager.PackageInfoFlags.of(0)
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                context.packageManager.getPackageInfo(context.packageName, 0)
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+}
+
+internal fun resolveInstallSource(installerPackage: String?): InstallSource {
+    return when {
+        installerPackage != null &&
+            (installerPackage.contains("fdroid", ignoreCase = true) ||
+                installerPackage.contains("droidify", ignoreCase = true)) ->
+            InstallSource.FDROID
+        installerPackage != null && installerPackage.contains("vending", ignoreCase = true) ->
+            InstallSource.PLAY_STORE
+        else ->
+            InstallSource.GITHUB
+    }
+}
+
+internal fun versionNameFrom(packageInfo: PackageInfo?): String =
+    packageInfo?.versionName ?: "1.4.1"
+
+internal fun versionCodeFrom(packageInfo: PackageInfo?): Long {
+    if (packageInfo == null) return 7L
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        packageInfo.longVersionCode
+    } else {
+        @Suppress("DEPRECATION")
+        packageInfo.versionCode.toLong()
+    }
+}
+
+internal fun httpErrorResult(responseCode: Int): UpdateCheckResult.Error =
+    UpdateCheckResult.Error("HTTP error $responseCode from GitHub")
+
+internal fun parseLatestReleaseResponse(
+    responseBody: String,
+    currentVersion: String,
+    isFdroid: Boolean,
+): UpdateCheckResult {
+    val json = JSONObject(responseBody)
+
+    val rawTagName = json.optString("tag_name", "").trim()
+    val latestVersion = rawTagName.removePrefix("v").removePrefix("V")
+    val releaseNotes = json.optString("body", "").trim()
+    val githubHtmlUrl = json.optString("html_url", UpdateService.GITHUB_RELEASES_WEB_URL)
+
+    val targetUrl = if (isFdroid) {
+        UpdateService.FDROID_MARKET_URI
+    } else {
+        githubHtmlUrl.ifEmpty { UpdateService.GITHUB_RELEASES_WEB_URL }
+    }
+
+    return if (UpdateService.isNewerVersion(latestVersion, currentVersion)) {
+        UpdateCheckResult.UpdateAvailable(
+            latestVersion = latestVersion,
+            changelog = releaseNotes,
+            updateUrl = targetUrl,
+            isFdroid = isFdroid
+        )
+    } else {
+        UpdateCheckResult.UpToDate(currentVersion)
     }
 }
 
