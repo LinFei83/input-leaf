@@ -114,35 +114,37 @@ object UpdateService {
                 readTimeout = 10000
             }
 
-            val responseCode = connection.responseCode
-            if (responseCode != HttpURLConnection.HTTP_OK) {
-                return@withContext UpdateCheckResult.Error("HTTP error $responseCode from GitHub")
-            }
+            connection.useAndDisconnect {
+                val responseCode = responseCode
+                if (responseCode != HttpURLConnection.HTTP_OK) {
+                    return@withContext UpdateCheckResult.Error("HTTP error $responseCode from GitHub")
+                }
 
-            val responseBody = connection.inputStream.bufferedReader().use(BufferedReader::readText)
-            val json = JSONObject(responseBody)
+                val responseBody = inputStream.bufferedReader().use(BufferedReader::readText)
+                val json = JSONObject(responseBody)
 
-            val rawTagName = json.optString("tag_name", "").trim()
-            val latestVersion = rawTagName.removePrefix("v").removePrefix("V")
-            val releaseNotes = json.optString("body", "").trim()
-            val githubHtmlUrl = json.optString("html_url", GITHUB_RELEASES_WEB_URL)
+                val rawTagName = json.optString("tag_name", "").trim()
+                val latestVersion = rawTagName.removePrefix("v").removePrefix("V")
+                val releaseNotes = json.optString("body", "").trim()
+                val githubHtmlUrl = json.optString("html_url", GITHUB_RELEASES_WEB_URL)
 
-            val targetUrl = if (isFdroid) {
-                // If the user has an F-Droid client installed, market:// will open it directly
-                FDROID_MARKET_URI
-            } else {
-                githubHtmlUrl.ifEmpty { GITHUB_RELEASES_WEB_URL }
-            }
+                val targetUrl = if (isFdroid) {
+                    // If the user has an F-Droid client installed, market:// will open it directly
+                    FDROID_MARKET_URI
+                } else {
+                    githubHtmlUrl.ifEmpty { GITHUB_RELEASES_WEB_URL }
+                }
 
-            if (isNewerVersion(latestVersion, currentVersion)) {
-                UpdateCheckResult.UpdateAvailable(
-                    latestVersion = latestVersion,
-                    changelog = releaseNotes,
-                    updateUrl = targetUrl,
-                    isFdroid = isFdroid
-                )
-            } else {
-                UpdateCheckResult.UpToDate(currentVersion)
+                if (isNewerVersion(latestVersion, currentVersion)) {
+                    UpdateCheckResult.UpdateAvailable(
+                        latestVersion = latestVersion,
+                        changelog = releaseNotes,
+                        updateUrl = targetUrl,
+                        isFdroid = isFdroid
+                    )
+                } else {
+                    UpdateCheckResult.UpToDate(currentVersion)
+                }
             }
         } catch (e: Exception) {
             UpdateCheckResult.Error(e.message ?: "Failed to check for updates")
@@ -169,5 +171,13 @@ object UpdateService {
             if (candPart < currPart) return false
         }
         return false
+    }
+}
+
+internal inline fun <T> HttpURLConnection.useAndDisconnect(block: HttpURLConnection.() -> T): T {
+    try {
+        return block()
+    } finally {
+        disconnect()
     }
 }

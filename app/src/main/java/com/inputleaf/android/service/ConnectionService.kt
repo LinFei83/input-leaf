@@ -251,6 +251,9 @@ class ConnectionService : Service() {
                     conn.close()
                     stateMachine.onDisconnected()
                     onConnectionRejected?.invoke()
+                    if (shouldClearActiveSession(ConnectAttemptOutcome.Rejected)) {
+                        clearActiveSession()
+                    }
                 }
                 is ConnectResult.Failed -> {
                     conn.close()
@@ -260,6 +263,9 @@ class ConnectionService : Service() {
                         scheduleRetry(serverIp, screenName, generation)
                     } else {
                         onConnectionFailed?.invoke(result.reason, result.detail)
+                        if (shouldClearActiveSession(ConnectAttemptOutcome.TerminalFailure)) {
+                            clearActiveSession()
+                        }
                     }
                 }
             }
@@ -273,6 +279,9 @@ class ConnectionService : Service() {
                 scheduleRetry(serverIp, screenName, generation)
             } else {
                 onConnectionFailed?.invoke(ConnectResult.FailureReason.NETWORK, e.message)
+                if (shouldClearActiveSession(ConnectAttemptOutcome.TerminalFailure)) {
+                    clearActiveSession()
+                }
             }
         }
     }
@@ -436,10 +445,14 @@ class ConnectionService : Service() {
         }
     }
 
-    fun disconnect() {
-        userInitiatedDisconnect = true
+    private fun clearActiveSession() {
         activeServerIp = null
         activeScreenName = null
+    }
+
+    fun disconnect() {
+        userInitiatedDisconnect = true
+        clearActiveSession()
         shizukuRecoveryJob?.cancel()
         shizukuRecoveryJob = null
         connectGeneration++
@@ -526,6 +539,7 @@ class ConnectionService : Service() {
         if (injector is ShizukuInputInjector) {
             Log.w(TAG, "Shizuku binder died while using Shizuku injector; disconnecting injector")
             injector?.disconnect()
+            handleShizukuServiceDisconnected()
         }
     }
 
