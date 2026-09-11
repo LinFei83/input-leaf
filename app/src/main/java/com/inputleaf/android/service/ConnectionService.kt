@@ -17,12 +17,14 @@ import com.inputleaf.android.network.ConnectionTransportPolicy
 import com.inputleaf.android.network.InputLeapConnection
 import com.inputleaf.android.network.ServerTransport
 import com.inputleaf.android.network.TlsFingerprintManager
+import com.inputleaf.android.shizuku.ShizukuInputInjector
 import com.inputleaf.android.storage.AppPreferences
 import com.inputleaf.android.storage.ClientCertificateStore
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import rikka.shizuku.Shizuku
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -56,7 +58,20 @@ class ConnectionService : Service() {
     private var screenHeight = 0
     private var currentMouseX = 0f
     private var currentMouseY = 0f
+    private var activeServerIp: String? = null
+    private var activeScreenName: String? = null
+    private var shizukuRecoveryJob: Job? = null
     private lateinit var prefs: AppPreferences
+
+    private val shizukuBinderReceivedListener = Shizuku.OnBinderReceivedListener {
+        Log.i(TAG, "Shizuku binder received in ConnectionService")
+        handleShizukuRestarted()
+    }
+
+    private val shizukuBinderDeadListener = Shizuku.OnBinderDeadListener {
+        Log.w(TAG, "Shizuku binder died in ConnectionService")
+        handleShizukuDied()
+    }
 
     val state: StateFlow<ConnectionState> get() = stateMachine.state
 
@@ -68,6 +83,13 @@ class ConnectionService : Service() {
         prefs = AppPreferences(this)
         NotificationHelper.createChannel(this)
         observeState()
+
+        try {
+            Shizuku.addBinderReceivedListener(shizukuBinderReceivedListener)
+            Shizuku.addBinderDeadListener(shizukuBinderDeadListener)
+        } catch (e: Throwable) {
+            Log.w(TAG, "Failed to register Shizuku binder listeners", e)
+        }
 
         val bounds = getScreenBounds()
         screenWidth = bounds.width()
@@ -124,12 +146,17 @@ class ConnectionService : Service() {
         }
 
         userInitiatedDisconnect = false
+        activeServerIp = serverIp
+        activeScreenName = screenName
         val generation = ++connectGeneration
         cancelPendingJobs(keepConnection = false)
         connection?.close()
         connection = null
 
         connectJob = scope.launch {
+            if (force) {
+                delay(150)
+            }
             performConnect(serverIp, screenName, generation)
         }
     }
@@ -224,6 +251,9 @@ class ConnectionService : Service() {
                     conn.close()
                     stateMachine.onDisconnected()
                     onConnectionRejected?.invoke()
+                    if (shouldClearActiveSession(ConnectAttemptOutcome.Rejected)) {
+                        clearActiveSession()
+                    }
                 }
                 is ConnectResult.Failed -> {
                     conn.close()
@@ -233,6 +263,9 @@ class ConnectionService : Service() {
                         scheduleRetry(serverIp, screenName, generation)
                     } else {
                         onConnectionFailed?.invoke(result.reason, result.detail)
+                        if (shouldClearActiveSession(ConnectAttemptOutcome.TerminalFailure)) {
+                            clearActiveSession()
+                        }
                     }
                 }
             }
@@ -246,6 +279,9 @@ class ConnectionService : Service() {
                 scheduleRetry(serverIp, screenName, generation)
             } else {
                 onConnectionFailed?.invoke(ConnectResult.FailureReason.NETWORK, e.message)
+                if (shouldClearActiveSession(ConnectAttemptOutcome.TerminalFailure)) {
+                    clearActiveSession()
+                }
             }
         }
     }
@@ -344,7 +380,20 @@ class ConnectionService : Service() {
     }
 
     fun setInjector(injector: com.inputleaf.android.inject.InputInjector) {
+        if (this.injector != null && this.injector != injector) {
+            this.injector?.disconnect()
+            if (this.injector is com.inputleaf.android.inject.AccessibilityInputInjector &&
+                injector !is com.inputleaf.android.inject.AccessibilityInputInjector
+            ) {
+                restorePreviousIme()
+            }
+        }
         this.injector = injector
+        if (injector is ShizukuInputInjector) {
+            injector.onServiceDisconnectedCallback = {
+                handleShizukuServiceDisconnected()
+            }
+        }
         Log.i(TAG, "Input injector set to: ${injector.name}")
     }
 
@@ -396,8 +445,16 @@ class ConnectionService : Service() {
         }
     }
 
+    private fun clearActiveSession() {
+        activeServerIp = null
+        activeScreenName = null
+    }
+
     fun disconnect() {
         userInitiatedDisconnect = true
+        clearActiveSession()
+        shizukuRecoveryJob?.cancel()
+        shizukuRecoveryJob = null
         connectGeneration++
         cancelPendingJobs(keepConnection = false)
         injector?.disconnect()
@@ -478,7 +535,65 @@ class ConnectionService : Service() {
         }
     }
 
+    private fun handleShizukuDied() {
+        if (injector is ShizukuInputInjector) {
+            Log.w(TAG, "Shizuku binder died while using Shizuku injector; disconnecting injector")
+            injector?.disconnect()
+            handleShizukuServiceDisconnected()
+        }
+    }
+
+    private fun handleShizukuServiceDisconnected() {
+        Log.w(TAG, "Shizuku UserService disconnected mid-session")
+        triggerShizukuRecovery(delayMs = 300L)
+    }
+
+    private fun handleShizukuRestarted() {
+        Log.i(TAG, "Shizuku service restarted")
+        triggerShizukuRecovery(delayMs = 600L)
+    }
+
+    private fun triggerShizukuRecovery(delayMs: Long) {
+        val ip = activeServerIp ?: return
+        val name = activeScreenName ?: return
+        if (userInitiatedDisconnect) return
+
+        shizukuRecoveryJob?.cancel()
+        shizukuRecoveryJob = scope.launch {
+            // Check if user specifically configured accessibility mode in prefs
+            val preferredMethod = prefs.inputMethod.first()
+            if (preferredMethod == "accessibility") {
+                Log.d(TAG, "Skipping Shizuku recovery because preferred method is Accessibility")
+                return@launch
+            }
+
+            delay(delayMs)
+            if (userInitiatedDisconnect || activeServerIp != ip) return@launch
+
+            Log.i(TAG, "Attempting auto-recovery of Shizuku session to $ip")
+            val bounds = getScreenBounds()
+            val newInjector = ShizukuInputInjector(bounds.width(), bounds.height())
+
+            if (newInjector.isAvailable() && newInjector.connect()) {
+                Log.i(TAG, "Shizuku injector recovered successfully; reconnecting session to $ip")
+                setInjector(newInjector)
+                reconnect(ip, name)
+            } else {
+                Log.w(TAG, "Could not recover Shizuku injector (not ready or permission missing)")
+                newInjector.disconnect()
+            }
+        }
+    }
+
     override fun onDestroy() {
+        try {
+            Shizuku.removeBinderReceivedListener(shizukuBinderReceivedListener)
+            Shizuku.removeBinderDeadListener(shizukuBinderDeadListener)
+        } catch (e: Throwable) {
+            // Ignore
+        }
+        shizukuRecoveryJob?.cancel()
+        shizukuRecoveryJob = null
         connectGeneration++
         cancelPendingJobs(keepConnection = false)
         scope.cancel()

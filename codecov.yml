@@ -15,6 +15,19 @@ coverage:
         target: 100%
         threshold: 0%
 
+ignore:
+  - "app/src/main/java/com/inputleaf/android/ui/**"
+  - "app/src/main/java/com/inputleaf/android/service/**"
+  - "app/src/main/java/com/inputleaf/android/shizuku/**"
+  - "app/src/main/java/com/inputleaf/android/storage/AppPreferences.kt"
+  - "app/src/test/**"
+  - "app/src/androidTest/**"
+  - "app/src/main/res/**"
+  - "app/build.gradle.kts"
+  - "codecov.yml"
+  - ".gitignore"
+  - "**/*.patch"
+
 comment:
   layout: "header, diff, files"
   behavior: default

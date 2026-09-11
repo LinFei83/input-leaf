@@ -29,6 +29,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.inputleaf.android.network.ConnectionTransportPolicy
 import com.inputleaf.android.ui.components.AnimatedBottomNavigation
 import com.inputleaf.android.ui.components.NavItem
+import com.inputleaf.android.ui.components.UpdateAvailableDialog
+import com.inputleaf.android.ui.components.WhatsNewDialog
+import com.inputleaf.android.update.UpdateCheckResult
 import com.inputleaf.android.util.BatteryOptimizationHelper
 
 private sealed class LeafRoute(val key: String) {
@@ -66,6 +69,9 @@ fun LeafNavigation(viewModel: MainViewModel) {
     val shizukuAvailable by viewModel.shizukuAvailable.collectAsState(initial = false)
     val accessibilityAvailable by viewModel.accessibilityAvailable.collectAsState(initial = false)
     val imeEnabledAndSelected by viewModel.imeEnabledAndSelected.collectAsStateWithLifecycle(initialValue = false)
+    val updateCheckResult by viewModel.updateCheckResult.collectAsStateWithLifecycle()
+    val isCheckingUpdate by viewModel.isCheckingUpdate.collectAsStateWithLifecycle()
+    val whatsNewChangelog by viewModel.whatsNewChangelog.collectAsStateWithLifecycle()
 
     var pendingClientCertificateUri by remember { mutableStateOf<Uri?>(null) }
     val clientCertificatePicker = rememberLauncherForActivityResult(
@@ -129,6 +135,69 @@ fun LeafNavigation(viewModel: MainViewModel) {
                     Text("Cancel")
                 }
             },
+        )
+    }
+
+    whatsNewChangelog?.let { changelog ->
+        WhatsNewDialog(
+            changelog = changelog,
+            onDismiss = { viewModel.dismissWhatsNew() }
+        )
+    }
+
+    LaunchedEffect(updateCheckResult) {
+        when (val result = updateCheckResult) {
+            is UpdateCheckResult.UpToDate -> {
+                Toast.makeText(
+                    context,
+                    "Input Leaf is up to date (v${result.currentVersion})",
+                    Toast.LENGTH_SHORT
+                ).show()
+                viewModel.dismissUpdateDialog()
+            }
+            is UpdateCheckResult.Error -> {
+                Toast.makeText(
+                    context,
+                    "Could not check updates: ${result.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
+                viewModel.dismissUpdateDialog()
+            }
+            else -> {}
+        }
+    }
+
+    (updateCheckResult as? UpdateCheckResult.UpdateAvailable)?.let { update ->
+        UpdateAvailableDialog(
+            latestVersion = update.latestVersion,
+            changelog = update.changelog,
+            isFdroid = update.isFdroid,
+            onUpdate = {
+                viewModel.dismissUpdateDialog()
+                try {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(update.updateUrl)).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    })
+                } catch (_: Exception) {
+                    if (update.isFdroid) {
+                        try {
+                            context.startActivity(
+                                Intent(
+                                    Intent.ACTION_VIEW,
+                                    Uri.parse("https://f-droid.org/packages/com.inputleaf.android/")
+                                ).apply {
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                            )
+                        } catch (_: Exception) {
+                            Toast.makeText(context, "Could not open F-Droid store", Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        Toast.makeText(context, "Could not open browser", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            },
+            onDismiss = { viewModel.dismissUpdateDialog() }
         )
     }
 
@@ -264,6 +333,8 @@ fun LeafNavigation(viewModel: MainViewModel) {
                         )
                     },
                     onRegenerateClientCertificate = { viewModel.regenerateClientCertificate() },
+                    isCheckingUpdate = isCheckingUpdate,
+                    onCheckForUpdates = { viewModel.checkForUpdates(manual = true) },
                     onBack = { screen = LeafRoute.Home.key },
                 )
             }
