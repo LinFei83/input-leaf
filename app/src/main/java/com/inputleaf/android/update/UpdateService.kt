@@ -1,6 +1,7 @@
 package com.inputleaf.android.update
 
 import android.content.Context
+import android.content.pm.InstallSourceInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
@@ -109,35 +110,70 @@ object UpdateService {
         return false
     }
 
-    private fun readInstallerPackageName(context: Context): String? {
-        return try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                context.packageManager
-                    .getInstallSourceInfo(context.packageName)
-                    .installingPackageName
-            } else {
-                @Suppress("DEPRECATION")
-                context.packageManager.getInstallerPackageName(context.packageName)
-            }
-        } catch (_: Exception) {
-            null
-        }
-    }
+    private fun readInstallerPackageName(context: Context): String? =
+        installerPackageNameForSdk(
+            sdkInt = Build.VERSION.SDK_INT,
+            modernLookup = { readModernInstallerPackageName(context) },
+            legacyLookup = { readLegacyInstallerPackageName(context) },
+        )
 
-    private fun readPackageInfo(context: Context): PackageInfo? {
-        return try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.packageManager.getPackageInfo(
-                    context.packageName,
-                    PackageManager.PackageInfoFlags.of(0)
-                )
-            } else {
-                @Suppress("DEPRECATION")
-                context.packageManager.getPackageInfo(context.packageName, 0)
-            }
-        } catch (_: Exception) {
-            null
+    private fun readPackageInfo(context: Context): PackageInfo? =
+        packageInfoForSdk(
+            sdkInt = Build.VERSION.SDK_INT,
+            modernLookup = { readModernPackageInfo(context) },
+            legacyLookup = { readLegacyPackageInfo(context) },
+        )
+}
+
+internal fun readModernInstallerPackageName(context: Context): String? =
+    installSourcePackageName(context.packageManager.getInstallSourceInfo(context.packageName))
+
+internal fun installSourcePackageName(installSourceInfo: InstallSourceInfo): String? =
+    installSourceInfo.installingPackageName
+
+@Suppress("DEPRECATION")
+internal fun readLegacyInstallerPackageName(context: Context): String? =
+    context.packageManager.getInstallerPackageName(context.packageName)
+
+internal fun readModernPackageInfo(context: Context): PackageInfo =
+    context.packageManager.getPackageInfo(
+        context.packageName,
+        PackageManager.PackageInfoFlags.of(0)
+    )
+
+@Suppress("DEPRECATION")
+internal fun readLegacyPackageInfo(context: Context): PackageInfo =
+    context.packageManager.getPackageInfo(context.packageName, 0)
+
+internal fun installerPackageNameForSdk(
+    sdkInt: Int,
+    modernLookup: () -> String?,
+    legacyLookup: () -> String?,
+): String? {
+    return try {
+        if (sdkInt >= Build.VERSION_CODES.R) {
+            modernLookup()
+        } else {
+            legacyLookup()
         }
+    } catch (_: Exception) {
+        null
+    }
+}
+
+internal fun packageInfoForSdk(
+    sdkInt: Int,
+    modernLookup: () -> PackageInfo,
+    legacyLookup: () -> PackageInfo,
+): PackageInfo? {
+    return try {
+        if (sdkInt >= Build.VERSION_CODES.TIRAMISU) {
+            modernLookup()
+        } else {
+            legacyLookup()
+        }
+    } catch (_: Exception) {
+        null
     }
 }
 
@@ -157,9 +193,9 @@ internal fun resolveInstallSource(installerPackage: String?): InstallSource {
 internal fun versionNameFrom(packageInfo: PackageInfo?): String =
     packageInfo?.versionName ?: "1.4.1"
 
-internal fun versionCodeFrom(packageInfo: PackageInfo?): Long {
+internal fun versionCodeFrom(packageInfo: PackageInfo?, sdkInt: Int = Build.VERSION.SDK_INT): Long {
     if (packageInfo == null) return 7L
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+    return if (sdkInt >= Build.VERSION_CODES.P) {
         packageInfo.longVersionCode
     } else {
         @Suppress("DEPRECATION")

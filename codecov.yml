@@ -20,6 +20,8 @@ ignore:
   - "app/src/main/java/com/inputleaf/android/service/**"
   - "app/src/main/java/com/inputleaf/android/shizuku/**"
   - "app/src/main/java/com/inputleaf/android/storage/AppPreferences.kt"
+  - "app/src/test/**"
+  - "app/src/androidTest/**"
 
 comment:
   layout: "header, diff, files"

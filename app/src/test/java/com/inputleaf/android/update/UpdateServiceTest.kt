@@ -1,9 +1,13 @@
 package com.inputleaf.android.update
 
+import android.content.pm.InstallSourceInfo
 import android.content.pm.PackageInfo
+import android.os.Build
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.`when`
 import java.io.ByteArrayInputStream
 import java.net.HttpURLConnection
 import java.net.URL
@@ -24,12 +28,27 @@ class UpdateServiceTest {
     }
 
     @Test
+    fun isNewerVersion_returnsFalseForBlankVersions() {
+        assertThat(UpdateService.isNewerVersion("", "1.4.1")).isFalse()
+        assertThat(UpdateService.isNewerVersion("1.4.2", "")).isFalse()
+        assertThat(UpdateService.isNewerVersion(" ", "1.4.1")).isFalse()
+    }
+
+    @Test
     fun isNewerVersion_returnsFalseWhenEqualOrLower() {
         assertThat(UpdateService.isNewerVersion("1.4.1", "1.4.1")).isFalse()
         assertThat(UpdateService.isNewerVersion("v1.4.1", "1.4.1")).isFalse()
         assertThat(UpdateService.isNewerVersion("1.4.0", "1.4.1")).isFalse()
         assertThat(UpdateService.isNewerVersion("1.3.9", "1.4.1")).isFalse()
         assertThat(UpdateService.isNewerVersion("0.9.9", "1.0.0")).isFalse()
+    }
+
+    @Test
+    fun installSourcePackageName_returnsInstallerPackage() {
+        val installSourceInfo = mock(InstallSourceInfo::class.java)
+        `when`(installSourceInfo.installingPackageName).thenReturn("org.fdroid.fdroid")
+
+        assertThat(installSourcePackageName(installSourceInfo)).isEqualTo("org.fdroid.fdroid")
     }
 
     @Test
@@ -63,6 +82,83 @@ class UpdateServiceTest {
         }
         assertThat(versionCodeFrom(packageInfo)).isEqualTo(42L)
         assertThat(versionCodeFrom(null)).isEqualTo(7L)
+    }
+
+    @Test
+    fun versionCodeFrom_usesLegacyFieldBelowApi28() {
+        val packageInfo = PackageInfo().apply {
+            @Suppress("DEPRECATION")
+            versionCode = 42
+        }
+        assertThat(versionCodeFrom(packageInfo, sdkInt = Build.VERSION_CODES.N)).isEqualTo(42L)
+    }
+
+    @Test
+    fun installerPackageNameForSdk_usesModernLookupOnApi30Plus() {
+        val result = installerPackageNameForSdk(
+            sdkInt = Build.VERSION_CODES.R,
+            modernLookup = { "org.fdroid.fdroid" },
+            legacyLookup = { error("legacy should not run") },
+        )
+
+        assertThat(result).isEqualTo("org.fdroid.fdroid")
+    }
+
+    @Test
+    fun installerPackageNameForSdk_usesLegacyLookupBelowApi30() {
+        val result = installerPackageNameForSdk(
+            sdkInt = Build.VERSION_CODES.Q,
+            modernLookup = { error("modern should not run") },
+            legacyLookup = { "com.android.vending" },
+        )
+
+        assertThat(result).isEqualTo("com.android.vending")
+    }
+
+    @Test
+    fun installerPackageNameForSdk_returnsNullWhenLookupThrows() {
+        val result = installerPackageNameForSdk(
+            sdkInt = Build.VERSION_CODES.R,
+            modernLookup = { throw IllegalStateException("boom") },
+            legacyLookup = { "ignored" },
+        )
+
+        assertThat(result).isNull()
+    }
+
+    @Test
+    fun packageInfoForSdk_usesModernLookupOnApi33Plus() {
+        val expected = PackageInfo().apply { versionName = "modern" }
+        val result = packageInfoForSdk(
+            sdkInt = Build.VERSION_CODES.TIRAMISU,
+            modernLookup = { expected },
+            legacyLookup = { error("legacy should not run") },
+        )
+
+        assertThat(result).isEqualTo(expected)
+    }
+
+    @Test
+    fun packageInfoForSdk_usesLegacyLookupBelowApi33() {
+        val expected = PackageInfo().apply { versionName = "legacy" }
+        val result = packageInfoForSdk(
+            sdkInt = Build.VERSION_CODES.S,
+            modernLookup = { error("modern should not run") },
+            legacyLookup = { expected },
+        )
+
+        assertThat(result).isEqualTo(expected)
+    }
+
+    @Test
+    fun packageInfoForSdk_returnsNullWhenLookupThrows() {
+        val result = packageInfoForSdk(
+            sdkInt = Build.VERSION_CODES.TIRAMISU,
+            modernLookup = { throw IllegalStateException("boom") },
+            legacyLookup = { PackageInfo() },
+        )
+
+        assertThat(result).isNull()
     }
 
     @Test
@@ -153,6 +249,17 @@ class UpdateServiceTest {
         )
 
         assertThat(result).isEqualTo(UpdateCheckResult.Error("network down"))
+    }
+
+    @Test
+    fun checkUpdate_returnsFallbackMessageWhenExceptionHasNoMessage() = runTest {
+        val result = UpdateService.checkUpdate(
+            currentVersion = "1.0.0",
+            isFdroid = false,
+            openConnection = { throw RuntimeException() },
+        )
+
+        assertThat(result).isEqualTo(UpdateCheckResult.Error("Failed to check for updates"))
     }
 
     @Test
