@@ -44,6 +44,14 @@ class UpdateServiceTest {
     }
 
     @Test
+    fun isNewerVersion_handlesDifferentSegmentCounts() {
+        assertThat(UpdateService.isNewerVersion("1.0.1", "1.0")).isTrue()
+        assertThat(UpdateService.isNewerVersion("1.0", "1.0.1")).isFalse()
+        assertThat(UpdateService.isNewerVersion("2", "1.9.9")).isTrue()
+        assertThat(UpdateService.isNewerVersion("1.9", "1.10")).isFalse()
+    }
+
+    @Test
     fun installSourcePackageName_returnsInstallerPackage() {
         val installSourceInfo = mock(InstallSourceInfo::class.java)
         `when`(installSourceInfo.installingPackageName).thenReturn("org.fdroid.fdroid")

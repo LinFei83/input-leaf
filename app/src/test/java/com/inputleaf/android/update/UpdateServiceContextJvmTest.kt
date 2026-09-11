@@ -1,12 +1,19 @@
 package com.inputleaf.android.update
 
 import android.content.Context
+import android.content.pm.InstallSourceInfo
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.doReturn
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.spy
+import org.mockito.Mockito.`when`
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
@@ -40,6 +47,30 @@ class UpdateServiceContextJvmTest {
     fun checkUpdate_returnsResultWithoutCrashing() = runTest {
         val result = UpdateService.checkUpdate(context)
 
+        assertThat(
+            result is UpdateCheckResult.UpdateAvailable ||
+                result is UpdateCheckResult.UpToDate ||
+                result is UpdateCheckResult.Error
+        ).isTrue()
+    }
+
+    @Test
+    fun checkUpdate_propagatesFdroidInstallSource() = runBlocking {
+        val installSourceInfo = mock(InstallSourceInfo::class.java)
+        `when`(installSourceInfo.installingPackageName).thenReturn("org.fdroid.fdroid")
+
+        val packageManager = spy(context.packageManager)
+        doReturn(installSourceInfo).`when`(packageManager)
+            .getInstallSourceInfo(context.packageName)
+
+        val fdroidContext = spy(context)
+        doReturn(packageManager).`when`(fdroidContext).packageManager
+
+        assertThat(UpdateService.getInstallSource(fdroidContext)).isEqualTo(InstallSource.FDROID)
+
+        val result = withTimeout(20_000) {
+            UpdateService.checkUpdate(fdroidContext)
+        }
         assertThat(
             result is UpdateCheckResult.UpdateAvailable ||
                 result is UpdateCheckResult.UpToDate ||
