@@ -1,11 +1,16 @@
 package com.inputleaf.android.update
 
+import android.content.Context
 import android.content.pm.InstallSourceInfo
 import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
 import android.os.Build
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
+import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.eq
+import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import java.io.ByteArrayInputStream
@@ -49,6 +54,9 @@ class UpdateServiceTest {
         assertThat(UpdateService.isNewerVersion("1.0", "1.0.1")).isFalse()
         assertThat(UpdateService.isNewerVersion("2", "1.9.9")).isTrue()
         assertThat(UpdateService.isNewerVersion("1.9", "1.10")).isFalse()
+        assertThat(UpdateService.isNewerVersion("1.0.0.5", "1.0.0")).isTrue()
+        assertThat(UpdateService.isNewerVersion("1.0.0", "1.0.0.5")).isFalse()
+        assertThat(UpdateService.isNewerVersion("1.0", "1.0.0.0")).isFalse()
     }
 
     @Test
@@ -268,6 +276,108 @@ class UpdateServiceTest {
         )
 
         assertThat(result).isEqualTo(UpdateCheckResult.Error("Failed to check for updates"))
+    }
+
+    @Test
+    fun checkUpdate_returnsFdroidParsedRelease() = runTest {
+        val connection = TestHttpURLConnection(
+            url = URL("http://example.com"),
+            responseBody = """{"tag_name":"v2.0.0","body":"F-Droid release","html_url":""}""",
+        )
+
+        val result = UpdateService.checkUpdate(
+            currentVersion = "1.0.0",
+            isFdroid = true,
+            openConnection = { connection },
+        )
+
+        assertThat(result).isInstanceOf(UpdateCheckResult.UpdateAvailable::class.java)
+        val update = result as UpdateCheckResult.UpdateAvailable
+        assertThat(update.updateUrl).isEqualTo(UpdateService.FDROID_MARKET_URI)
+        assertThat(update.isFdroid).isTrue()
+    }
+
+    @Test
+    fun checkUpdate_returnsFdroidUpdateThroughContext() = runTest {
+        val context = mockFdroidContext(versionName = "1.0.0")
+        val connection = TestHttpURLConnection(
+            url = URL("http://example.com"),
+            responseBody = """{"tag_name":"v2.0.0","body":"F-Droid release","html_url":""}""",
+        )
+
+        val result = UpdateService.checkUpdate(context, openConnection = { connection })
+
+        assertThat(result).isInstanceOf(UpdateCheckResult.UpdateAvailable::class.java)
+        val update = result as UpdateCheckResult.UpdateAvailable
+        assertThat(update.updateUrl).isEqualTo(UpdateService.FDROID_MARKET_URI)
+        assertThat(update.isFdroid).isTrue()
+        assertThat(connection.disconnectCalled).isTrue()
+    }
+
+    @Test
+    fun readLegacyInstallerPackageName_readsInstallerFromPackageManager() {
+        val context = mock(Context::class.java)
+        val packageManager = mock(PackageManager::class.java)
+        `when`(context.packageManager).thenReturn(packageManager)
+        `when`(context.packageName).thenReturn("com.inputleaf.android")
+        doReturn("org.fdroid.fdroid").`when`(packageManager)
+            .getInstallerPackageName("com.inputleaf.android")
+
+        assertThat(readLegacyInstallerPackageName(context)).isEqualTo("org.fdroid.fdroid")
+    }
+
+    @Test
+    fun readLegacyPackageInfo_readsInstalledPackageInfo() {
+        val context = mock(Context::class.java)
+        val packageManager = mock(PackageManager::class.java)
+        val packageInfo = PackageInfo().apply { versionName = "legacy" }
+        `when`(context.packageManager).thenReturn(packageManager)
+        `when`(context.packageName).thenReturn("com.inputleaf.android")
+        doReturn(packageInfo).`when`(packageManager)
+            .getPackageInfo("com.inputleaf.android", 0)
+
+        assertThat(readLegacyPackageInfo(context).versionName).isEqualTo("legacy")
+    }
+
+    @Test
+    fun readModernInstallerPackageName_readsInstallSourceInfo() {
+        val context = mock(Context::class.java)
+        val packageManager = mock(PackageManager::class.java)
+        val installSourceInfo = mock(InstallSourceInfo::class.java)
+        `when`(context.packageManager).thenReturn(packageManager)
+        `when`(context.packageName).thenReturn("com.inputleaf.android")
+        `when`(packageManager.getInstallSourceInfo("com.inputleaf.android")).thenReturn(installSourceInfo)
+        `when`(installSourceInfo.installingPackageName).thenReturn("com.android.vending")
+
+        assertThat(readModernInstallerPackageName(context)).isEqualTo("com.android.vending")
+    }
+
+    private fun mockFdroidContext(versionName: String): Context {
+        val context = mock(Context::class.java)
+        val packageManager = mock(PackageManager::class.java)
+        val installSourceInfo = mock(InstallSourceInfo::class.java)
+        val packageInfo = PackageInfo().apply { this.versionName = versionName }
+
+        `when`(context.packageManager).thenReturn(packageManager)
+        `when`(context.packageName).thenReturn("com.inputleaf.android")
+        `when`(installSourceInfo.installingPackageName).thenReturn("org.fdroid.fdroid")
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            `when`(packageManager.getInstallSourceInfo("com.inputleaf.android")).thenReturn(installSourceInfo)
+            `when`(
+                packageManager.getPackageInfo(
+                    eq("com.inputleaf.android"),
+                    any(PackageManager.PackageInfoFlags::class.java),
+                )
+            ).thenReturn(packageInfo)
+        } else {
+            doReturn("org.fdroid.fdroid").`when`(packageManager)
+                .getInstallerPackageName("com.inputleaf.android")
+            doReturn(packageInfo).`when`(packageManager)
+                .getPackageInfo("com.inputleaf.android", 0)
+        }
+
+        return context
     }
 
     @Test

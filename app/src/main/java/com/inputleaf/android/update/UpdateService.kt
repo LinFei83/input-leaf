@@ -51,10 +51,13 @@ object UpdateService {
         return versionCodeFrom(readPackageInfo(context))
     }
 
-    suspend fun checkUpdate(context: Context): UpdateCheckResult {
+    suspend fun checkUpdate(
+        context: Context,
+        openConnection: (URL) -> HttpURLConnection = defaultConnectionOpener,
+    ): UpdateCheckResult {
         val currentVersion = getCurrentVersion(context)
         val isFdroid = getInstallSource(context) == InstallSource.FDROID
-        return checkUpdate(currentVersion, isFdroid, defaultConnectionOpener)
+        return checkUpdate(currentVersion, isFdroid, openConnection)
     }
 
     internal suspend fun checkUpdate(
@@ -102,8 +105,8 @@ object UpdateService {
 
         val maxLength = maxOf(candidateParts.size, currentParts.size)
         for (i in 0 until maxLength) {
-            val candPart = candidateParts.getOrElse(i) { 0 }
-            val currPart = currentParts.getOrElse(i) { 0 }
+            val candPart = candidateParts.getOrNull(i) ?: 0
+            val currPart = currentParts.getOrNull(i) ?: 0
             if (candPart > currPart) return true
             if (candPart < currPart) return false
         }

@@ -44,6 +44,11 @@ class UpdateServiceContextJvmTest {
     }
 
     @Test
+    fun readModernPackageInfo_readsInstalledPackageInfo() {
+        assertThat(readModernPackageInfo(context).packageName).isEqualTo(context.packageName)
+    }
+
+    @Test
     fun checkUpdate_returnsResultWithoutCrashing() = runTest {
         val result = UpdateService.checkUpdate(context)
 
