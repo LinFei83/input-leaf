@@ -33,5 +33,7 @@ class NetworkUtilsTest {
         assertThat(NetworkUtils.isPrivateIP("invalid")).isFalse()
         assertThat(NetworkUtils.isPrivateIP("192.168.1")).isFalse()
         assertThat(NetworkUtils.isPrivateIP("192.168.1.abc")).isFalse()
+        assertThat(NetworkUtils.isPrivateIP("256.1.1.1")).isFalse()
+        assertThat(NetworkUtils.isPrivateIP("10.0.0.256")).isFalse()
     }
 }

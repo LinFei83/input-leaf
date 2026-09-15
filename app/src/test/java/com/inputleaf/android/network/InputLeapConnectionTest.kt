@@ -535,6 +535,152 @@ class InputLeapConnectionTest {
         }
     }
 
+    @Test fun `busy and incompatible hello replies fail with distinct reasons`() = runBlocking {
+        LoopbackServer { socket, _ ->
+            val output = DataOutputStream(socket.outputStream)
+            writeFrame(output, helloBody())
+            readFrame(DataInputStream(socket.inputStream))
+            writeFrame(output, "EBSY".toByteArray())
+        }.use { server ->
+            connection(
+                server.port,
+                transportPolicy = ConnectionTransportPolicy.PLAIN_ONLY,
+                preferredTransport = ServerTransport.PLAIN,
+            ).useConnection { connection ->
+                assertFailureReason(
+                    connection.connect("android", 1920, 1080),
+                    ConnectResult.FailureReason.BUSY,
+                )
+            }
+        }
+
+        LoopbackServer { socket, _ ->
+            val output = DataOutputStream(socket.outputStream)
+            writeFrame(output, helloBody())
+            readFrame(DataInputStream(socket.inputStream))
+            writeFrame(output, "EICV".toByteArray() + byteArrayOf(0, 1, 0, 7))
+        }.use { server ->
+            connection(
+                server.port,
+                transportPolicy = ConnectionTransportPolicy.PLAIN_ONLY,
+            ).useConnection { connection ->
+                assertFailureReason(
+                    connection.connect("android", 1920, 1080),
+                    ConnectResult.FailureReason.INCOMPATIBLE,
+                )
+            }
+        }
+    }
+
+    @Test fun `reset options completes the handshake after DINF`() = runBlocking {
+        LoopbackServer { socket, _ ->
+            val input = DataInputStream(socket.inputStream)
+            val output = DataOutputStream(socket.outputStream)
+            writeFrame(output, helloBody())
+            readFrame(input)
+            writeFrame(output, "QINF".toByteArray())
+            readFrame(input)
+            writeFrame(output, "CROP".toByteArray())
+            runCatching { socket.inputStream.read() }
+        }.use { server ->
+            connection(
+                server.port,
+                transportPolicy = ConnectionTransportPolicy.PLAIN_ONLY,
+                preferredTransport = ServerTransport.PLAIN,
+            ).useConnection { connection ->
+                assertThat(connection.connect("android", 1920, 1080))
+                    .isInstanceOf(ConnectResult.Ok::class.java)
+            }
+        }
+    }
+
+    @Test fun `LSYN completes the handshake after DINF`() = runBlocking {
+        LoopbackServer { socket, _ ->
+            val input = DataInputStream(socket.inputStream)
+            val output = DataOutputStream(socket.outputStream)
+            writeFrame(output, helloBody())
+            readFrame(input)
+            writeFrame(output, "QINF".toByteArray())
+            readFrame(input)
+            writeFrame(output, "LSYN".toByteArray())
+            runCatching { socket.inputStream.read() }
+        }.use { server ->
+            connection(
+                server.port,
+                transportPolicy = ConnectionTransportPolicy.PLAIN_ONLY,
+            ).useConnection { connection ->
+                assertThat(connection.connect("android", 1920, 1080))
+                    .isInstanceOf(ConnectResult.Ok::class.java)
+            }
+        }
+    }
+
+    @Test fun `hello and DINF without CIAK complete a lenient handshake`() = runBlocking {
+        LoopbackServer { socket, _ ->
+            val input = DataInputStream(socket.inputStream)
+            val output = DataOutputStream(socket.outputStream)
+            writeFrame(output, helloBody())
+            readFrame(input)
+            writeFrame(output, "QINF".toByteArray())
+            readFrame(input)
+            repeat(30) {
+                writeFrame(output, "CALV".toByteArray())
+                readFrame(input)
+            }
+            runCatching { socket.inputStream.read() }
+        }.use { server ->
+            connection(
+                server.port,
+                transportPolicy = ConnectionTransportPolicy.PLAIN_ONLY,
+                preferredTransport = ServerTransport.PLAIN,
+            ).useConnection { connection ->
+                assertThat(connection.connect("android", 1920, 1080))
+                    .isInstanceOf(ConnectResult.Ok::class.java)
+            }
+        }
+    }
+
+    @Test fun `plain connect to a closed port is a network failure`() = runBlocking {
+        val closedPort = ServerSocket(0, 50, InetAddress.getByName(LOOPBACK_HOST)).use { it.localPort }
+        connection(
+            closedPort,
+            transportPolicy = ConnectionTransportPolicy.PLAIN_ONLY,
+            preferredTransport = ServerTransport.PLAIN,
+        ).useConnection { connection ->
+            assertFailureReason(
+                connection.connect("android", 1920, 1080),
+                ConnectResult.FailureReason.NETWORK,
+            )
+        }
+    }
+
+    @Test fun `post-handshake mouse moves are forwarded`() = runBlocking {
+        val sendEvent = CompletableDeferred<Unit>()
+        LoopbackServer { socket, _ ->
+            performServerHandshake(socket)
+            sendEvent.awaitBlocking()
+            writeFrame(
+                DataOutputStream(socket.outputStream),
+                "DMMV".toByteArray() + byteArrayOf(0, 1, 0, 2),
+            )
+            socket.inputStream.read()
+        }.use { server ->
+            connection(
+                server.port,
+                transportPolicy = ConnectionTransportPolicy.PLAIN_ONLY,
+            ).useConnection { connection ->
+                assertThat(connection.connect("android", 1920, 1080))
+                    .isInstanceOf(ConnectResult.Ok::class.java)
+                val forwarded = async(start = CoroutineStart.UNDISPATCHED) {
+                    connection.events.first { it == InputLeapEvent.MouseMoveAbs(1, 2) }
+                }
+                sendEvent.complete(Unit)
+                assertThat(withTimeout(TEST_TIMEOUT_MS) { forwarded.await() })
+                    .isEqualTo(InputLeapEvent.MouseMoveAbs(1, 2))
+            }
+        }
+    }
+
     @Test fun `client negotiates its protocol minor while preserving the server banner`() = runBlocking {
         LoopbackServer { socket, _ ->
             performServerHandshake(

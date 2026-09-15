@@ -4,7 +4,10 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
+import android.content.pm.PackageInfo
+import android.os.Build
 import java.io.ByteArrayInputStream
+import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlinx.coroutines.runBlocking
@@ -53,6 +56,37 @@ class UpdateServiceContextTest {
     }
 
     @Test
+    fun sdkLookups_returnNullWhenTheyThrow() {
+        assertThat(
+            installerPackageNameForSdk(
+                sdkInt = Build.VERSION_CODES.R,
+                modernLookup = { throw IllegalStateException("boom") },
+                legacyLookup = { "ignored" },
+            )
+        ).isNull()
+        assertThat(
+            packageInfoForSdk(
+                sdkInt = Build.VERSION_CODES.TIRAMISU,
+                modernLookup = { throw IllegalStateException("boom") },
+                legacyLookup = { PackageInfo() },
+            )
+        ).isNull()
+    }
+
+    @Test
+    fun checkUpdate_returnsErrorWhenReadingBodyThrows() = runBlocking {
+        val connection = TestHttpURLConnection(
+            url = URL("http://example.com"),
+            throwOnInputStream = true,
+        )
+
+        val result = UpdateService.checkUpdate(context, openConnection = { connection })
+
+        assertThat(result).isEqualTo(UpdateCheckResult.Error("read failed"))
+        assertThat(connection.disconnectCalled).isTrue()
+    }
+
+    @Test
     fun checkUpdate_usesInjectedConnection() = runBlocking {
         val connection = TestHttpURLConnection(
             url = URL("http://example.com"),
@@ -70,6 +104,7 @@ class UpdateServiceContextTest {
         url: URL,
         private val responseCode: Int = HTTP_OK,
         private val responseBody: String = "",
+        private val throwOnInputStream: Boolean = false,
     ) : HttpURLConnection(url) {
         var disconnectCalled = false
 
@@ -87,7 +122,12 @@ class UpdateServiceContextTest {
 
         override fun getResponseMessage(): String = "OK"
 
-        override fun getInputStream() = ByteArrayInputStream(responseBody.toByteArray())
+        override fun getInputStream() =
+            if (throwOnInputStream) {
+                throw IOException("read failed")
+            } else {
+                ByteArrayInputStream(responseBody.toByteArray())
+            }
 
         override fun getErrorStream() = null
 
