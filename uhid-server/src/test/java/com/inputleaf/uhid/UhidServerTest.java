@@ -302,6 +302,16 @@ public class UhidServerTest {
         assertThat(numbered).hasMessageThat().isEqualTo("Cannot verify peer PID 42");
     }
 
+    @Test public void runFailsWithoutAndroidLocalSockets() throws Exception {
+        UhidServer server = serverWith(
+            new TrackingOutputStream("keyboard", false),
+            new TrackingOutputStream("mouse", false)
+        );
+
+        assertThrows(Throwable.class, server::run);
+        server.close();
+    }
+
     @Test public void rejectsANullDeviceFactory() {
         assertThrows(NullPointerException.class, () -> new UhidServer((UhidServer.DeviceFactory) null));
     }
