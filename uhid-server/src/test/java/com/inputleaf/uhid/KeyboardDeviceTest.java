@@ -46,9 +46,11 @@ public class KeyboardDeviceTest {
     @Test public void closesOutputWhenCreatePacketCannotBeWritten() {
         FailingOutputStream output = new FailingOutputStream();
 
-        assertThrows(IOException.class, () -> KeyboardDevice.initializeOutput(output));
+        IOException failure = assertThrows(IOException.class, () -> KeyboardDevice.initializeOutput(output));
 
         assertThat(output.closed).isTrue();
+        assertThat(failure.getSuppressed()).asList().hasSize(1);
+        assertThat(failure.getSuppressed()[0]).hasMessageThat().isEqualTo("close failed");
     }
 
     @Test public void emitsKeyDownUpAndCurrentModifierState() throws Exception {
@@ -114,8 +116,9 @@ public class KeyboardDeviceTest {
             throw new IOException("write failed");
         }
 
-        @Override public void close() {
+        @Override public void close() throws IOException {
             closed = true;
+            throw new IOException("close failed");
         }
     }
 }
