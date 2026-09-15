@@ -14,6 +14,7 @@ import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import java.io.ByteArrayInputStream
+import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -143,6 +144,17 @@ class UpdateServiceTest {
     }
 
     @Test
+    fun installerPackageNameForSdk_returnsNullWhenLegacyLookupThrows() {
+        val result = installerPackageNameForSdk(
+            sdkInt = Build.VERSION_CODES.Q,
+            modernLookup = { "ignored" },
+            legacyLookup = { throw IllegalStateException("boom") },
+        )
+
+        assertThat(result).isNull()
+    }
+
+    @Test
     fun packageInfoForSdk_usesModernLookupOnApi33Plus() {
         val expected = PackageInfo().apply { versionName = "modern" }
         val result = packageInfoForSdk(
@@ -172,6 +184,17 @@ class UpdateServiceTest {
             sdkInt = Build.VERSION_CODES.TIRAMISU,
             modernLookup = { throw IllegalStateException("boom") },
             legacyLookup = { PackageInfo() },
+        )
+
+        assertThat(result).isNull()
+    }
+
+    @Test
+    fun packageInfoForSdk_returnsNullWhenLegacyLookupThrows() {
+        val result = packageInfoForSdk(
+            sdkInt = Build.VERSION_CODES.S,
+            modernLookup = { PackageInfo() },
+            legacyLookup = { throw IllegalStateException("boom") },
         )
 
         assertThat(result).isNull()
@@ -276,6 +299,23 @@ class UpdateServiceTest {
         )
 
         assertThat(result).isEqualTo(UpdateCheckResult.Error("Failed to check for updates"))
+    }
+
+    @Test
+    fun checkUpdate_returnsErrorWhenReadingBodyThrows() = runTest {
+        val connection = TestHttpURLConnection(
+            url = URL("http://example.com"),
+            throwOnInputStream = true,
+        )
+
+        val result = UpdateService.checkUpdate(
+            currentVersion = "1.0.0",
+            isFdroid = false,
+            openConnection = { connection },
+        )
+
+        assertThat(result).isEqualTo(UpdateCheckResult.Error("read failed"))
+        assertThat(connection.disconnectCalled).isTrue()
     }
 
     @Test
@@ -412,6 +452,7 @@ class UpdateServiceTest {
         url: URL,
         private val responseCode: Int = HTTP_OK,
         private val responseBody: String = "",
+        private val throwOnInputStream: Boolean = false,
     ) : HttpURLConnection(url) {
         var disconnectCalled = false
 
@@ -429,7 +470,12 @@ class UpdateServiceTest {
 
         override fun getResponseMessage(): String = "OK"
 
-        override fun getInputStream() = ByteArrayInputStream(responseBody.toByteArray())
+        override fun getInputStream() =
+            if (throwOnInputStream) {
+                throw IOException("read failed")
+            } else {
+                ByteArrayInputStream(responseBody.toByteArray())
+            }
 
         override fun getErrorStream() = null
 

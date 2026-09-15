@@ -4,6 +4,11 @@ codecov:
     # both before publishing the combined project/patch status and the PR comment.
     after_n_builds: 2
 
+parsers:
+  jacoco:
+    # Kotlin inline/lambda line maps often show as partials even when the branch ran.
+    partials_as_hits: true
+
 coverage:
   status:
     project:
@@ -19,7 +24,13 @@ ignore:
   - "app/src/main/java/com/inputleaf/android/ui/**"
   - "app/src/main/java/com/inputleaf/android/service/**"
   - "app/src/main/java/com/inputleaf/android/shizuku/**"
+  - "app/src/main/java/com/inputleaf/android/InputLeafApplication.kt"
+  - "app/src/main/java/com/inputleaf/android/inject/AccessibilityInputService.kt"
+  - "app/src/main/java/com/inputleaf/android/inject/AccessibilityInputInjector.kt"
+  - "app/src/main/java/com/inputleaf/android/inject/InputLeafIME.kt"
+  - "app/src/main/java/com/inputleaf/android/inject/KeysymInjection.kt"
   - "app/src/main/java/com/inputleaf/android/storage/AppPreferences.kt"
+  - "app/src/main/java/com/inputleaf/android/storage/ClientCertificateStore.kt"
   - "app/src/test/**"
   - "app/src/androidTest/**"
   - "app/src/main/res/**"
