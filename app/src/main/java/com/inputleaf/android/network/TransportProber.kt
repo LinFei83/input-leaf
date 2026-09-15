@@ -33,34 +33,33 @@ object TransportProber {
             coroutineScope {
                 val tls = async { probeTls(host, port) }
                 val plain = async { probePlainHello(host, port) }
-                when (val tlsResult = tls.await()) {
-                    TlsProbeResult.Success -> {
-                        plain.cancel()
-                        ServerSecurityMode.TLS
-                    }
-                    TlsProbeResult.RequiresClientCert -> {
-                        plain.cancel()
-                        ServerSecurityMode.TLS_CLIENT_CERT_REQUIRED
-                    }
-                    TlsProbeResult.PlainServer -> {
-                        plain.cancel()
-                        ServerSecurityMode.PLAIN
-                    }
-                    TlsProbeResult.Failed ->
-                        if (plain.await()) {
-                            ServerSecurityMode.PLAIN
-                        } else {
-                            ServerSecurityMode.TLS
-                        }
+                val tlsResult = tls.await()
+                if (tlsResult != TlsProbeResult.Failed) {
+                    plain.cancel()
                 }
+                securityModeForProbe(
+                    tlsResult,
+                    tlsResult == TlsProbeResult.Failed && plain.await(),
+                )
             }
         }
 
-    private enum class TlsProbeResult {
+    internal enum class TlsProbeResult {
         Success,
         RequiresClientCert,
         PlainServer,
         Failed,
+    }
+
+    internal fun securityModeForProbe(
+        tlsResult: TlsProbeResult,
+        plainHello: Boolean,
+    ): ServerSecurityMode = when (tlsResult) {
+        TlsProbeResult.Success -> ServerSecurityMode.TLS
+        TlsProbeResult.RequiresClientCert -> ServerSecurityMode.TLS_CLIENT_CERT_REQUIRED
+        TlsProbeResult.PlainServer -> ServerSecurityMode.PLAIN
+        TlsProbeResult.Failed ->
+            if (plainHello) ServerSecurityMode.PLAIN else ServerSecurityMode.TLS
     }
 
     private fun probeTls(host: String, port: Int): TlsProbeResult = try {
@@ -73,13 +72,15 @@ object TransportProber {
             TlsProbeResult.Success
         }
     } catch (error: Exception) {
-        when {
-            InputLeapConnection.isPlainServerTlsError(error) ->
-                TlsProbeResult.PlainServer
-            InputLeapConnection.isClientCertificateRequired(error) || isTlsHandshake(error) ->
-                TlsProbeResult.RequiresClientCert
-            else -> TlsProbeResult.Failed
-        }
+        classifyTlsProbeError(error)
+    }
+
+    internal fun classifyTlsProbeError(error: Exception): TlsProbeResult = when {
+        InputLeapConnection.isPlainServerTlsError(error) ->
+            TlsProbeResult.PlainServer
+        InputLeapConnection.isClientCertificateRequired(error) || isTlsHandshake(error) ->
+            TlsProbeResult.RequiresClientCert
+        else -> TlsProbeResult.Failed
     }
 
     private fun isTlsHandshake(error: Exception): Boolean =
