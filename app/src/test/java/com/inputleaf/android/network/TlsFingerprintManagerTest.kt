@@ -95,6 +95,8 @@ class TlsFingerprintManagerTest {
         }
 
         trustManager.checkServerTrusted(arrayOf(leaf, loadTestCert()), "RSA")
+        trustManager.checkClientTrusted(arrayOf(leaf), "RSA")
+        assertThat(trustManager.acceptedIssuers).isEmpty()
 
         assertThat(captured).isSameInstanceAs(leaf)
         assertThat(callbackCount).isEqualTo(1)
@@ -107,6 +109,8 @@ class TlsFingerprintManagerTest {
         )
 
         trustManager.checkServerTrusted(arrayOf(leaf, loadTestCert()), "RSA")
+        trustManager.checkClientTrusted(arrayOf(leaf), "RSA")
+        assertThat(trustManager.acceptedIssuers).isEmpty()
     }
 
     @Test fun `pinning trust manager rejects a nonmatching leaf certificate`() {

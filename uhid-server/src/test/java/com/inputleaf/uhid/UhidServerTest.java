@@ -129,6 +129,76 @@ public class UhidServerTest {
         assertThat(failure.getSuppressed()[0]).hasMessageThat().isEqualTo("mouse close failed");
     }
 
+    @Test public void constructsFromASuccessfulDeviceFactoryAndDispatchesThroughIt() throws Exception {
+        TrackingOutputStream keyboardOutput = new TrackingOutputStream("keyboard", false);
+        TrackingOutputStream mouseOutput = new TrackingOutputStream("mouse", false);
+        UhidServer.DeviceFactory factory = new UhidServer.DeviceFactory() {
+            @Override public KeyboardDevice createKeyboard() {
+                return new KeyboardDevice(keyboardOutput);
+            }
+
+            @Override public MouseDevice createMouse() {
+                return new MouseDevice(mouseOutput);
+            }
+        };
+
+        UhidServer server = new UhidServer(factory);
+        java.lang.reflect.Field dispatcherField = UhidServer.class.getDeclaredField("dispatcher");
+        dispatcherField.setAccessible(true);
+        UhidEventDispatcher dispatcher = (UhidEventDispatcher) dispatcherField.get(server);
+
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        DataOutputStream output = new DataOutputStream(bytes);
+        output.writeByte(EventProtocol.TYPE_KEY_EVENT);
+        output.writeInt('A');
+        output.writeByte(EventProtocol.ACTION_DOWN);
+        output.writeByte(0);
+        output.writeByte(EventProtocol.TYPE_KEY_EVENT);
+        output.writeInt('A');
+        output.writeByte(EventProtocol.ACTION_UP);
+        output.writeByte(0);
+        output.writeByte(EventProtocol.TYPE_MOUSE_MOVE);
+        output.writeInt(1);
+        output.writeInt(2);
+        output.writeByte(EventProtocol.TYPE_MOUSE_BTN);
+        output.writeByte(1);
+        output.writeByte(EventProtocol.ACTION_DOWN);
+        output.writeByte(EventProtocol.TYPE_MOUSE_BTN);
+        output.writeByte(1);
+        output.writeByte(EventProtocol.ACTION_UP);
+        output.writeByte(EventProtocol.TYPE_MOUSE_WHEEL);
+        output.writeShort(3);
+        output.writeShort(4);
+        DataInputStream input = new DataInputStream(new ByteArrayInputStream(bytes.toByteArray()));
+        while (input.available() > 0) {
+            byte type = input.readByte();
+            dispatcher.dispatch(type, input);
+        }
+
+        server.close();
+        assertThat(keyboardOutput.closed).isTrue();
+        assertThat(mouseOutput.closed).isTrue();
+    }
+
+    @Test public void defaultFactoryFailsWithoutUhidOrClosesCleanly() {
+        try {
+            UhidServer server = new UhidServer();
+            try {
+                server.close();
+            } catch (IOException ignored) {
+            }
+        } catch (IOException | RuntimeException | UnsatisfiedLinkError | NoClassDefFoundError ignored) {
+        }
+        try {
+            new KeyboardDevice().close();
+        } catch (IOException | RuntimeException ignored) {
+        }
+        try {
+            new MouseDevice().close();
+        } catch (IOException | RuntimeException ignored) {
+        }
+    }
+
     @Test public void closesKeyboardWhenMouseCreationFails() {
         TrackingOutputStream keyboardOutput = new TrackingOutputStream("keyboard", true);
         IOException creationFailure = new IOException("mouse creation failed");

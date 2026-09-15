@@ -119,7 +119,38 @@ class ServerScannerTest {
         assertThat(scanner.isClientCertificateRejection(javax.net.ssl.SSLHandshakeException("empty client certificate chain"))).isTrue()
         assertThat(scanner.isClientCertificateRejection(javax.net.ssl.SSLProtocolException("bad_certificate received"))).isTrue()
         assertThat(scanner.isClientCertificateRejection(javax.net.ssl.SSLException("certificate required"))).isTrue()
+        assertThat(scanner.isClientCertificateRejection(javax.net.ssl.SSLException("bad certificate"))).isTrue()
+        assertThat(scanner.isClientCertificateRejection(javax.net.ssl.SSLException("certificate_required"))).isTrue()
         assertThat(scanner.isClientCertificateRejection(java.net.ConnectException("Connection refused"))).isFalse()
+    }
+
+    @Test fun `probePlain returns a placeholder when a plain listener has no hello`() {
+        val scanner = ServerScanner()
+        com.inputleaf.android.testutil.LoopbackServer(connectionCount = 2) { socket, _ ->
+            socket.inputStream.read()
+        }.use { server ->
+            val assumed = scanner.probePlain(
+                com.inputleaf.android.testutil.LOOPBACK_HOST,
+                400,
+                assumePlain = true,
+                port = server.port,
+            )
+            assertThat(assumed).isEqualTo(
+                ServerInfo(
+                    ip = com.inputleaf.android.testutil.LOOPBACK_HOST,
+                    name = "Deskflow (Plain)",
+                    port = server.port,
+                )
+            )
+
+            val unknown = scanner.probePlain(
+                com.inputleaf.android.testutil.LOOPBACK_HOST,
+                200,
+                assumePlain = false,
+                port = server.port,
+            )
+            assertThat(unknown).isNull()
+        }
     }
 
     @Test fun `discoverySslContext initializes properly`() {

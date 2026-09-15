@@ -62,4 +62,15 @@ class AeadBlobTest {
     fun `decode rejects invalid length`() {
         ClientCertificatePayloadCodec.decode(byteArrayOf(1, 0, 0, 0, 0, 0, 0, 0, 0))
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `decode rejects trailing payload bytes`() {
+        val material = ClientCertificateTestFixture.material()
+        try {
+            val encoded = ClientCertificatePayloadCodec.encode(material)
+            ClientCertificatePayloadCodec.decode(encoded + byteArrayOf(0))
+        } finally {
+            material.clear()
+        }
+    }
 }

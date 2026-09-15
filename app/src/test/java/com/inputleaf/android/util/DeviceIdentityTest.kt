@@ -1,7 +1,12 @@
 package com.inputleaf.android.util
 
+import android.os.Build
+import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 class DeviceIdentityTest {
     @Test
@@ -44,5 +49,37 @@ class DeviceIdentityTest {
             val color = DeviceIdentity.getBrandColor(brand)
             assertThat(color).isNotNull()
         }
+        assertThat(DeviceIdentity.getBrandColor("pocophone"))
+            .isEqualTo(DeviceIdentity.getBrandColor("poco"))
+        assertThat(DeviceIdentity.getBrandColor("hmd global"))
+            .isEqualTo(DeviceIdentity.getBrandColor("nokia"))
+        assertThat(DeviceIdentity.getBrandColor(null))
+            .isEqualTo(DeviceIdentity.getBrandColor("android"))
+        assertThat(DeviceIdentity.getBrandLogoRes("pocophone"))
+            .isEqualTo(DeviceIdentity.getBrandLogoRes("poco"))
+        assertThat(DeviceIdentity.getBrandLogoRes("hmd global"))
+            .isEqualTo(DeviceIdentity.getBrandLogoRes("nokia"))
+        assertThat(DeviceIdentity.getBrandLogoRes(null))
+            .isEqualTo(DeviceIdentity.getBrandLogoRes("android"))
+    }
+
+    @Test
+    fun `null identity fields use documented fallbacks`() {
+        assertThat(DeviceIdentity.getManufacturerName(null)).isEqualTo("Android")
+        assertThat(DeviceIdentity.getInternalModelCode(null)).isEqualTo("Unknown")
+        assertThat(DeviceIdentity.getAndroidVersion(null)).isEqualTo("Android 14")
+    }
+}
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [Build.VERSION_CODES.UPSIDE_DOWN_CAKE])
+class DeviceIdentityMarketingNameTest {
+    @Test
+    fun `requestMarketingName invokes the callback or falls back without throwing`() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        DeviceIdentity.requestMarketingName(context) { name ->
+            assertThat(name).isNotEmpty()
+        }
+        assertThat(DeviceIdentity.getMarketingName()).isNotEmpty()
     }
 }

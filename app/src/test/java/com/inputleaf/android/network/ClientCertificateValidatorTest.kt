@@ -72,4 +72,9 @@ class ClientCertificateValidatorTest {
             material.clear()
         }
     }
+
+    @Test fun `rejects an empty PKCS12 blob as invalid format`() {
+        assertThat(ClientCertificateValidator.validate(ByteArray(0), CharArray(0)))
+            .isEqualTo(ClientCertificateValidationResult.InvalidFormat)
+    }
 }

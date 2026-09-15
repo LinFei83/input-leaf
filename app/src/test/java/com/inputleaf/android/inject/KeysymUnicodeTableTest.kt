@@ -78,4 +78,13 @@ class KeysymUnicodeTableTest {
     @Test fun `returns null for unknown keysyms`() {
         assertThat(KeysymUnicodeTable.lookup(0x123456)).isNull()
     }
+
+    @Test fun `rejects XK_Unicode values outside the Unicode range`() {
+        assertThat(KeysymUnicodeTable.lookup(0x01000000)).isNull()
+        assertThat(KeysymUnicodeTable.lookup(0x01110000)).isNull()
+        assertThat(KeysymUnicodeTable.lookup(0xE000)).isNull()
+        assertThat(KeysymUnicodeTable.lookup(0x0378)).isNull()
+        assertThat(KeysymUnicodeTable.lookup(0xFDD0)).isNull()
+        assertThat(KeysymUnicodeTable.lookup(0x10)).isNull()
+    }
 }
