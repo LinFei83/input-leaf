@@ -581,7 +581,7 @@ class InputLeapConnectionTest {
             writeFrame(output, "QINF".toByteArray())
             readFrame(input)
             writeFrame(output, "CROP".toByteArray())
-            socket.inputStream.read()
+            runCatching { socket.inputStream.read() }
         }.use { server ->
             connection(
                 server.port,
@@ -603,7 +603,7 @@ class InputLeapConnectionTest {
             writeFrame(output, "QINF".toByteArray())
             readFrame(input)
             writeFrame(output, "LSYN".toByteArray())
-            socket.inputStream.read()
+            runCatching { socket.inputStream.read() }
         }.use { server ->
             connection(
                 server.port,
@@ -627,7 +627,7 @@ class InputLeapConnectionTest {
                 writeFrame(output, "CALV".toByteArray())
                 readFrame(input)
             }
-            socket.inputStream.read()
+            runCatching { socket.inputStream.read() }
         }.use { server ->
             connection(
                 server.port,

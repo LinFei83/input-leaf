@@ -1,7 +1,11 @@
-package com.inputleaf.android.network
+package com.inputleaf.android.util
 
 import android.os.Build
 import com.google.common.truth.Truth.assertThat
+import com.inputleaf.android.network.ConnectResult
+import com.inputleaf.android.network.ConnectionTransportPolicy
+import com.inputleaf.android.network.InputLeapConnection
+import com.inputleaf.android.network.ServerTransport
 import com.inputleaf.android.testutil.LOOPBACK_HOST
 import kotlinx.coroutines.runBlocking
 import org.junit.Test

@@ -126,8 +126,8 @@ class ServerScannerTest {
 
     @Test fun `probePlain returns a placeholder when a plain listener has no hello`() {
         val scanner = ServerScanner()
-        com.inputleaf.android.testutil.LoopbackServer(connectionCount = 2) { socket, _ ->
-            socket.inputStream.read()
+        com.inputleaf.android.testutil.LoopbackServer { socket, _ ->
+            runCatching { socket.inputStream.read() }
         }.use { server ->
             val assumed = scanner.probePlain(
                 com.inputleaf.android.testutil.LOOPBACK_HOST,
@@ -142,7 +142,11 @@ class ServerScannerTest {
                     port = server.port,
                 )
             )
+        }
 
+        com.inputleaf.android.testutil.LoopbackServer { socket, _ ->
+            runCatching { socket.inputStream.read() }
+        }.use { server ->
             val unknown = scanner.probePlain(
                 com.inputleaf.android.testutil.LOOPBACK_HOST,
                 200,
