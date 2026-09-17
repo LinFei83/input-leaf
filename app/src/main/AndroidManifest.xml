@@ -50,7 +50,7 @@
         <!-- Input Method Service for Rootless Keyboard Injection -->
         <service
             android:name=".inject.InputLeafIME"
-            android:label="Input Leaf Keyboard"
+            android:label="Input Leaf 键盘"
             android:permission="android.permission.BIND_INPUT_METHOD"
             android:exported="true">
             <intent-filter>

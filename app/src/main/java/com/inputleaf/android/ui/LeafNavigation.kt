@@ -100,14 +100,14 @@ fun LeafNavigation(viewModel: MainViewModel) {
                 password = ""
                 pendingClientCertificateUri = null
             },
-            title = { Text("Import Client Certificate") },
+            title = { Text("导入客户端证书") },
             text = {
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("PKCS12 password") },
+                    label = { Text("PKCS12 密码") },
                     supportingText = {
-                        Text("The certificate is encrypted with Android Keystore after validation.")
+                        Text("证书验证后将使用 Android 密钥库加密。")
                     },
                     visualTransformation = PasswordVisualTransformation(),
                     singleLine = true,
@@ -122,7 +122,7 @@ fun LeafNavigation(viewModel: MainViewModel) {
                         pendingClientCertificateUri = null
                     }
                 ) {
-                    Text("Import")
+                    Text("导入")
                 }
             },
             dismissButton = {
@@ -132,7 +132,7 @@ fun LeafNavigation(viewModel: MainViewModel) {
                         pendingClientCertificateUri = null
                     }
                 ) {
-                    Text("Cancel")
+                    Text("取消")
                 }
             },
         )
@@ -150,7 +150,7 @@ fun LeafNavigation(viewModel: MainViewModel) {
             is UpdateCheckResult.UpToDate -> {
                 Toast.makeText(
                     context,
-                    "Input Leaf is up to date (v${result.currentVersion})",
+                    "Input Leaf 已是最新版本（v${result.currentVersion}）",
                     Toast.LENGTH_SHORT
                 ).show()
                 viewModel.dismissUpdateDialog()
@@ -158,7 +158,7 @@ fun LeafNavigation(viewModel: MainViewModel) {
             is UpdateCheckResult.Error -> {
                 Toast.makeText(
                     context,
-                    "Could not check updates: ${result.message}",
+                    "无法检查更新：${result.message}",
                     Toast.LENGTH_SHORT
                 ).show()
                 viewModel.dismissUpdateDialog()
@@ -190,10 +190,10 @@ fun LeafNavigation(viewModel: MainViewModel) {
                                 }
                             )
                         } catch (_: Exception) {
-                            Toast.makeText(context, "Could not open F-Droid store", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "无法打开 F-Droid 商店", Toast.LENGTH_SHORT).show()
                         }
                     } else {
-                        Toast.makeText(context, "Could not open browser", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "无法打开浏览器", Toast.LENGTH_SHORT).show()
                     }
                 }
             },
@@ -225,10 +225,10 @@ fun LeafNavigation(viewModel: MainViewModel) {
     }
 
     val navItems = listOf(
-        NavItem("Home", Icons.Rounded.Home, LeafRoute.Home.key),
-        NavItem("Servers", Icons.Rounded.Dns, LeafRoute.Servers.key),
-        NavItem("Permissions", Icons.Rounded.Shield, LeafRoute.Setup.key),
-        NavItem("Settings", Icons.Rounded.Settings, LeafRoute.Settings.key),
+        NavItem("首页", Icons.Rounded.Home, LeafRoute.Home.key),
+        NavItem("服务器", Icons.Rounded.Dns, LeafRoute.Servers.key),
+        NavItem("权限", Icons.Rounded.Shield, LeafRoute.Setup.key),
+        NavItem("设置", Icons.Rounded.Settings, LeafRoute.Settings.key),
     )
     val selectedIndex = navItems.indexOfFirst { it.route == screen }.coerceAtLeast(0)
 
@@ -355,7 +355,7 @@ private fun openImeSetup(context: android.content.Context) {
         context.startActivity(Intent(Settings.ACTION_INPUT_METHOD_SETTINGS))
         Toast.makeText(
             context,
-            "Enable Input Leaf Keyboard, then click again to select it",
+            "请启用 Input Leaf 键盘，然后再次点击以选择它",
             Toast.LENGTH_LONG,
         ).show()
     }

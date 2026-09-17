@@ -46,19 +46,19 @@ fun UpdateAvailableDialog(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Download,
-                        contentDescription = "Update",
+                        contentDescription = "更新",
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.size(24.dp)
                     )
                 }
                 Column {
                     Text(
-                        text = "Update Available",
+                        text = "有可用更新",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "v$latestVersion is now ready",
+                        text = "v$latestVersion 已准备就绪",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -73,7 +73,7 @@ fun UpdateAvailableDialog(
             ) {
                 if (changelog.isNotBlank()) {
                     Text(
-                        text = "What's changed:",
+                        text = "更新内容：",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -99,9 +99,9 @@ fun UpdateAvailableDialog(
                 }
                 Text(
                     text = if (isFdroid) {
-                        "You can update Input Leaf directly from the F-Droid app repository."
+                        "你可以直接从 F-Droid 应用仓库更新 Input Leaf。"
                     } else {
-                        "You can download the latest signed release APK from GitHub."
+                        "你可以从 GitHub 下载最新的已签名发行版 APK。"
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -119,12 +119,12 @@ fun UpdateAvailableDialog(
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = if (isFdroid) "Open in F-Droid" else "Download from GitHub")
+                Text(text = if (isFdroid) "在 F-Droid 中打开" else "从 GitHub 下载")
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Later")
+                Text("稍后")
             }
         }
     )
@@ -151,19 +151,19 @@ fun WhatsNewDialog(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.NewReleases,
-                        contentDescription = "New",
+                        contentDescription = "新",
                         tint = MaterialTheme.colorScheme.onSecondaryContainer,
                         modifier = Modifier.size(24.dp)
                     )
                 }
                 Column {
                     Text(
-                        text = "What's New",
+                        text = "新功能",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Version ${changelog.versionName}",
+                        text = "版本 ${changelog.versionName}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -214,7 +214,7 @@ fun WhatsNewDialog(
                 onClick = onDismiss,
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Got it!")
+                Text("知道了！")
             }
         }
     )

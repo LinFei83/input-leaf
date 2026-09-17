@@ -54,14 +54,14 @@ fun ShizukuStatusCard(
                     )
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Shizuku Ready",
+                            text = "Shizuku 就绪",
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onTertiaryContainer,
                             style = MaterialTheme.typography.titleSmall
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Input injection enabled",
+                            text = "输入注入已启用",
                             color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f),
                             style = MaterialTheme.typography.bodySmall
                         )
@@ -79,14 +79,14 @@ fun ShizukuStatusCard(
 
             when (status) {
                 ShizukuStatus.CHECKING -> {
-                    icon = null; color = MaterialTheme.colorScheme.onSurfaceVariant; title = "Checking Shizuku..."
+                    icon = null; color = MaterialTheme.colorScheme.onSurfaceVariant; title = "正在检查 Shizuku…"
                     description = ""; actionLabel = null; action = null
                 }
                 ShizukuStatus.NOT_INSTALLED -> {
                     icon = Icons.Default.Warning; color = MaterialTheme.colorScheme.secondary
-                    title = "Shizuku Not Installed"
-                    description = "Install Shizuku from Play Store to enable mouse/keyboard input."
-                    actionLabel = "Install Shizuku"
+                    title = "未安装 Shizuku"
+                    description = "请从 Play Store 安装 Shizuku 以启用鼠标/键盘输入。"
+                    actionLabel = "安装 Shizuku"
                     action = {
                         context.startActivity(Intent(Intent.ACTION_VIEW, 
                             Uri.parse("https://play.google.com/store/apps/details?id=moe.shizuku.privileged.api")))
@@ -94,9 +94,9 @@ fun ShizukuStatusCard(
                 }
                 ShizukuStatus.NOT_RUNNING -> {
                     icon = Icons.Default.Warning; color = MaterialTheme.colorScheme.secondary
-                    title = "Shizuku Not Running"
-                    description = "Open Shizuku app and start it via Wireless Debugging (Android 11+) or ADB."
-                    actionLabel = "Open Shizuku"
+                    title = "Shizuku 未运行"
+                    description = "请打开 Shizuku 应用，并通过无线调试（Android 11+）或 ADB 启动它。"
+                    actionLabel = "打开 Shizuku"
                     action = {
                         context.packageManager.getLaunchIntentForPackage("moe.shizuku.privileged.api")?.let {
                             context.startActivity(it)
@@ -105,12 +105,12 @@ fun ShizukuStatusCard(
                 }
                 ShizukuStatus.PERMISSION_REQUIRED -> {
                     icon = Icons.Default.Warning; color = MaterialTheme.colorScheme.secondary
-                    title = "Permission Required"
-                    description = "Grant Input Leaf permission to use Shizuku for input injection."
-                    actionLabel = "Grant Permission"; action = onRequestPermission
+                    title = "需要授权"
+                    description = "授予 Input Leaf 使用 Shizuku 进行输入注入的权限。"
+                    actionLabel = "授予权限"; action = onRequestPermission
                 }
                 else -> {
-                    icon = null; color = MaterialTheme.colorScheme.onSurfaceVariant; title = "Unknown"
+                    icon = null; color = MaterialTheme.colorScheme.onSurfaceVariant; title = "未知"
                     description = ""; actionLabel = null; action = null
                 }
             }

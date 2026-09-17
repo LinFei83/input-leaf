@@ -58,7 +58,7 @@ fun MainScreen(
             onDismissRequest = { showEditNameDialog = false },
             title = {
                 Text(
-                    text = "Rename Device",
+                    text = "重命名设备",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -67,7 +67,7 @@ fun MainScreen(
                 OutlinedTextField(
                     value = tempName,
                     onValueChange = { tempName = it },
-                    label = { Text("Device Screen Name") },
+                    label = { Text("设备屏幕名称") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -82,12 +82,12 @@ fun MainScreen(
                     },
                     enabled = tempName.isNotBlank()
                 ) {
-                    Text("Save")
+                    Text("保存")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showEditNameDialog = false }) {
-                    Text("Cancel")
+                    Text("取消")
                 }
             }
         )
@@ -131,14 +131,14 @@ fun MainScreen(
                     FeatureToggleCard(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Rounded.Mouse,
-                        label = "Mouse",
+                        label = "鼠标",
                         enabled = mouseEnabled,
                         onToggle = { onToggleMouse(!mouseEnabled) },
                     )
                     FeatureToggleCard(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Rounded.Keyboard,
-                        label = "Keyboard",
+                        label = "键盘",
                         enabled = keyboardEnabled,
                         onToggle = { onToggleKeyboard(!keyboardEnabled) },
                     )
@@ -150,7 +150,7 @@ fun MainScreen(
             if (favorites.isNotEmpty()) {
                 item {
                     Text(
-                        text = "Quick Connect",
+                        text = "快速连接",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
@@ -173,7 +173,7 @@ fun MainScreen(
             if (!isInputInjectionReady && !isSessionActive) {
                 item {
                     Text(
-                        text = "Setup Required",
+                        text = "需要完成设置",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
@@ -203,13 +203,13 @@ fun MainScreen(
                             )
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Enable Shizuku Mode",
+                                    text = "启用 Shizuku 模式",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onErrorContainer
                                 )
                                 Text(
-                                    text = "Recommended for precise mouse injection. Requires Shizuku background service.",
+                                    text = "推荐用于精确的鼠标注入。需要 Shizuku 后台服务。",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -235,19 +235,19 @@ fun MainScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.Accessibility,
-                                contentDescription = "Accessibility",
+                                contentDescription = "无障碍",
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(28.dp)
                             )
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Enable Accessibility Mode",
+                                    text = "启用无障碍模式",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                                 Text(
-                                    text = "Easy rootless touch & keyboard simulation. Works out of the box on any device.",
+                                    text = "轻松实现免 root 的触控与键盘模拟。在任意设备上开箱即用。",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -352,7 +352,7 @@ fun MainScreen(
                                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
                                         Text(
-                                            text = "Screen: ",
+                                            text = "屏幕：",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                                         )
@@ -373,7 +373,7 @@ fun MainScreen(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Rounded.Edit,
-                                        contentDescription = "Edit Name",
+                                        contentDescription = "编辑名称",
                                         modifier = Modifier.size(18.dp),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -432,29 +432,29 @@ private fun ConnectionStatusCard(
 ) {
     val (statusLabel, statusIcon, containerColor, contentColor, serverInfo) = when (state) {
         is ConnectionState.Active -> StatusInfo(
-            "CONNECTED", Icons.Rounded.CheckCircle,
+            "已连接", Icons.Rounded.CheckCircle,
             Color(0xFF1B5E20).copy(alpha = 0.15f), Color(0xFF4CAF50),
             "${state.serverName} • ${state.serverIp}"
         )
         is ConnectionState.Idle -> StatusInfo(
-            "IDLE", Icons.Rounded.Pause,
+            "空闲", Icons.Rounded.Pause,
             Color(0xFF0D47A1).copy(alpha = 0.15f), Color(0xFF42A5F5),
             "${state.serverName} • ${state.serverIp}"
         )
         is ConnectionState.Connecting -> StatusInfo(
-            "CONNECTING...", Icons.Rounded.Sync,
+            "连接中…", Icons.Rounded.Sync,
             Color(0xFFF57F17).copy(alpha = 0.15f), Color(0xFFFFB300),
             state.serverIp
         )
         is ConnectionState.Handshaking -> StatusInfo(
-            "HANDSHAKING...", Icons.Rounded.Sync,
+            "握手中…", Icons.Rounded.Sync,
             Color(0xFFF57F17).copy(alpha = 0.15f), Color(0xFFFFB300),
             state.serverIp
         )
         is ConnectionState.Disconnected -> StatusInfo(
-            "DISCONNECTED", Icons.Rounded.LinkOff,
+            "已断开", Icons.Rounded.LinkOff,
             Color(0xFFB71C1C).copy(alpha = 0.12f), Color(0xFFEF5350),
-            "No server connected"
+            "未连接服务器"
         )
     }
 
@@ -520,7 +520,7 @@ private fun ConnectionStatusCard(
                     ),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                 ) {
-                    Text("Disconnect", fontSize = 12.sp)
+                    Text("断开连接", fontSize = 12.sp)
                 }
             }
         }

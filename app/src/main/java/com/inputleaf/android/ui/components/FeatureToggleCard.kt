@@ -73,7 +73,7 @@ fun FeatureToggleCard(
                 color = contentColor,
             )
             Text(
-                text = if (enabled) "Enabled" else "Disabled",
+                text = if (enabled) "已启用" else "已禁用",
                 style = MaterialTheme.typography.bodySmall,
                 color = contentColor.copy(alpha = 0.7f),
             )

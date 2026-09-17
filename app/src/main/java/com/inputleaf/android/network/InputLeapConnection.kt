@@ -199,7 +199,7 @@ class InputLeapConnection(
                 return SocketOpenResult.Failed(
                     ConnectResult.Failed(
                         ConnectResult.FailureReason.NETWORK,
-                        "No certificate captured",
+                        "未捕获到证书",
                     ),
                 )
             }

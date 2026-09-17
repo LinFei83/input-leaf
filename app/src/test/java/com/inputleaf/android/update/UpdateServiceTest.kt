@@ -202,7 +202,7 @@ class UpdateServiceTest {
 
     @Test
     fun httpErrorResult_formatsMessage() {
-        assertThat(httpErrorResult(404).message).isEqualTo("HTTP error 404 from GitHub")
+        assertThat(httpErrorResult(404).message).isEqualTo("GitHub 返回 HTTP 错误 404")
     }
 
     @Test
@@ -256,7 +256,7 @@ class UpdateServiceTest {
             openConnection = { connection },
         )
 
-        assertThat(result).isEqualTo(UpdateCheckResult.Error("HTTP error 500 from GitHub"))
+        assertThat(result).isEqualTo(UpdateCheckResult.Error("GitHub 返回 HTTP 错误 500"))
         assertThat(connection.disconnectCalled).isTrue()
     }
 
@@ -298,7 +298,7 @@ class UpdateServiceTest {
             openConnection = { throw RuntimeException() },
         )
 
-        assertThat(result).isEqualTo(UpdateCheckResult.Error("Failed to check for updates"))
+        assertThat(result).isEqualTo(UpdateCheckResult.Error("检查更新失败"))
     }
 
     @Test

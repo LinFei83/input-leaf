@@ -502,7 +502,7 @@ class ConnectionService : Service() {
                     }
                 }
                 if (com.inputleaf.android.inject.AccessibilityInputService.isServiceRunning()) {
-                    com.inputleaf.android.inject.AccessibilityInputService.targetImeLabelToSelect = "Input Leaf Keyboard"
+                    com.inputleaf.android.inject.AccessibilityInputService.targetImeLabelToSelect = "Input Leaf 键盘"
                 }
                 android.os.Handler(android.os.Looper.getMainLooper()).post {
                     imm.showInputMethodPicker()

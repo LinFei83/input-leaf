@@ -77,7 +77,7 @@ object UpdateService {
                 parseLatestReleaseResponse(responseBody, currentVersion, isFdroid)
             }
         } catch (e: Exception) {
-            UpdateCheckResult.Error(e.message ?: "Failed to check for updates")
+            UpdateCheckResult.Error(e.message ?: "检查更新失败")
         }
     }
 
@@ -207,7 +207,7 @@ internal fun versionCodeFrom(packageInfo: PackageInfo?, sdkInt: Int = Build.VERS
 }
 
 internal fun httpErrorResult(responseCode: Int): UpdateCheckResult.Error =
-    UpdateCheckResult.Error("HTTP error $responseCode from GitHub")
+    UpdateCheckResult.Error("GitHub 返回 HTTP 错误 $responseCode")
 
 internal fun parseLatestReleaseResponse(
     responseBody: String,

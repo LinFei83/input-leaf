@@ -43,7 +43,7 @@ fun SetupScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Setup",
+                        text = "设置引导",
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleLarge,
                         letterSpacing = 0.5.sp
@@ -61,13 +61,13 @@ fun SetupScreen(
         ) {
             item {
                 Text(
-                    text = "Permissions",
+                    text = "权限",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Grant all required permissions to use InputLeaf.",
+                    text = "授予所有必需权限以使用 InputLeaf。",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -83,9 +83,9 @@ fun SetupScreen(
             item {
                 PermissionCard(
                     icon = Icons.Rounded.Accessibility,
-                    title = "Accessibility Service",
-                    description = "Rootless touch & keyboard injection — works without Shizuku",
-                    buttonLabel = "Enable",
+                    title = "无障碍服务",
+                    description = "免 root 的触控与键盘注入——无需 Shizuku 即可运行",
+                    buttonLabel = "启用",
                     isGranted = accessibilityAvailable,
                     onRequestPermission = onRequestAccessibilityService
                 )
@@ -94,9 +94,9 @@ fun SetupScreen(
             item {
                 PermissionCard(
                     icon = Icons.Default.Warning,
-                    title = "Virtual Keyboard",
-                    description = "Required for hardware shortcuts like Ctrl+C without Shizuku",
-                    buttonLabel = "Select Keyboard",
+                    title = "虚拟键盘",
+                    description = "在无 Shizuku 时使用 Ctrl+C 等硬件快捷键所必需",
+                    buttonLabel = "选择键盘",
                     isGranted = imeEnabledAndSelected,
                     onRequestPermission = onRequestImeSetup
                 )
@@ -105,8 +105,8 @@ fun SetupScreen(
             item {
                 PermissionCard(
                     icon = Icons.Default.Warning,
-                    title = "Overlay Permission",
-                    description = "Required to show cursor overlay",
+                    title = "悬浮窗权限",
+                    description = "显示光标悬浮层所必需",
                     isGranted = canDrawOverlays,
                     onRequestPermission = onRequestOverlayPermission
                 )
@@ -115,9 +115,9 @@ fun SetupScreen(
             item {
                 PermissionCard(
                     icon = Icons.Default.Warning,
-                    title = "Battery Optimization",
-                    description = "Go to: Battery usage → Allow background activity",
-                    buttonLabel = "Open App Info",
+                    title = "电池优化",
+                    description = "前往：电池用量 → 允许后台活动",
+                    buttonLabel = "打开应用信息",
                     isGranted = batteryOptimizationExempt,
                     onRequestPermission = onRequestBatteryOptimization
                 )
@@ -131,7 +131,7 @@ private fun PermissionCard(
     icon: ImageVector,
     title: String,
     description: String,
-    buttonLabel: String = "Grant",
+    buttonLabel: String = "授予",
     isGranted: Boolean,
     onRequestPermission: () -> Unit
 ) {

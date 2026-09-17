@@ -72,7 +72,7 @@ fun SplashScreen(onTimeout: () -> Unit) {
     ) {
         Image(
             painter = painterResource(id = R.drawable.ic_splash_logo),
-            contentDescription = "Input Leaf Logo",
+            contentDescription = "Input Leaf 标志",
             modifier = Modifier
                 .size(200.dp)
                 .alpha(alphaAnim)
@@ -92,14 +92,14 @@ fun SplashScreen(onTimeout: () -> Unit) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Android extension of Input Leap",
+            text = "Input Leap 的 Android 扩展",
             color = MistGreen,
             fontSize = 13.sp,
             modifier = Modifier.alpha(alphaAnim)
         )
 
         Text(
-            text = "Open Source KVM Software",
+            text = "开源 KVM 软件",
             color = MistGreenDim,
             fontSize = 12.sp,
             modifier = Modifier.alpha(alphaAnim)

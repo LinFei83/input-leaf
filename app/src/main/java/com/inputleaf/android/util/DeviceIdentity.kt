@@ -65,7 +65,7 @@ object DeviceIdentity {
     fun getManufacturerName(manufacturer: String? = Build.MANUFACTURER): String =
         (manufacturer ?: "Android").replaceFirstChar { it.uppercase() }
 
-    fun getInternalModelCode(model: String? = Build.MODEL): String = model ?: "Unknown"
+    fun getInternalModelCode(model: String? = Build.MODEL): String = model ?: "未知"
 
     fun getAndroidVersion(release: String? = Build.VERSION.RELEASE): String = "Android ${release ?: "14"}"
 

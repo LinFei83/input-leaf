@@ -12,7 +12,7 @@ class ConnectionFailureMessageTest {
             connectionFailureMessage(
                 ConnectResult.FailureReason.TLS_AGAINST_PLAIN_SERVER
             )
-        ).contains("Select Auto or Plain only")
+        ).contains("请仅选择自动或明文")
     }
 
     @Test fun `each connection failure has a user-facing message`() {
@@ -33,7 +33,7 @@ class ConnectionFailureMessageTest {
     @Test fun `client certificate required asks the user to trust the phone in Deskflow`() {
         assertThat(
             connectionFailureMessage(ConnectResult.FailureReason.CLIENT_CERT_REQUIRED)
-        ).contains("fingerprint")
+        ).contains("指纹")
     }
 
     @Test fun `client certificate import failures are actionable`() {

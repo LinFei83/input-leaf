@@ -50,39 +50,39 @@ internal fun connectionFailureMessage(
     reason: ConnectResult.FailureReason,
     detail: String? = null,
 ): String = when (reason) {
-    ConnectResult.FailureReason.NETWORK -> "Could not reach the Deskflow server"
+    ConnectResult.FailureReason.NETWORK -> "无法连接到 Deskflow 服务器"
     ConnectResult.FailureReason.TLS_AGAINST_PLAIN_SERVER ->
-        "Server is not using TLS. Select Auto or Plain only, or enable TLS in Deskflow."
+        "服务器未使用 TLS。请仅选择自动或明文，或在 Deskflow 中启用 TLS。"
     ConnectResult.FailureReason.CERTIFICATE_MISMATCH ->
-        "Deskflow's TLS certificate changed. Remove the trusted server only if you expect this."
+        "Deskflow 的 TLS 证书已更改。仅在你确实预期如此时才移除受信任的服务器。"
     ConnectResult.FailureReason.CLIENT_CERT_REQUIRED ->
-        "Deskflow is asking to trust this phone. Open Settings, compare the fingerprint, and accept it in Deskflow."
+        "Deskflow 正在请求信任此手机。请打开设置，比对指纹，并在 Deskflow 中接受。"
     ConnectResult.FailureReason.HANDSHAKE ->
-        "Deskflow handshake failed on the selected transport"
+        "Deskflow 在所选的传输方式上握手失败"
     ConnectResult.FailureReason.INCOMPATIBLE ->
-        detail ?: "Deskflow rejected this client's protocol version"
+        detail ?: "Deskflow 拒绝了此客户端的协议版本"
     ConnectResult.FailureReason.BUSY ->
-        "This screen name is already connected to Deskflow"
+        "此屏幕名称已连接到 Deskflow"
 }
 
 internal fun clientCertificateImportError(
     result: ClientCertificateValidationResult,
 ): String? = when (result) {
     is ClientCertificateValidationResult.Success -> null
-    ClientCertificateValidationResult.IncorrectPassword -> "Incorrect PKCS12 password"
+    ClientCertificateValidationResult.IncorrectPassword -> "PKCS12 密码错误"
     ClientCertificateValidationResult.InvalidFormat ->
-        "File is not a valid PKCS12 (.p12 or .pfx) bundle"
+        "文件不是有效的 PKCS12（.p12 或 .pfx）文件包"
     ClientCertificateValidationResult.NoPrivateKey ->
-        "The certificate bundle does not contain a private key"
+        "证书文件包不包含私钥"
     ClientCertificateValidationResult.KeyMismatch ->
-        "The private key does not match the client certificate"
-    ClientCertificateValidationResult.Expired -> "The client certificate has expired"
+        "私钥与客户端证书不匹配"
+    ClientCertificateValidationResult.Expired -> "客户端证书已过期"
     ClientCertificateValidationResult.NotYetValid ->
-        "The client certificate is not valid yet"
+        "客户端证书尚未生效"
     ClientCertificateValidationResult.UnsupportedKey ->
-        "The client certificate uses an unsupported key type"
+        "客户端证书使用了不受支持的密钥类型"
     ClientCertificateValidationResult.StorageError ->
-        "Could not securely store the client certificate"
+        "无法安全存储客户端证书"
 }
 
 class MainViewModel(app: Application) : AndroidViewModel(app) {
@@ -231,14 +231,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
             val injector = resolveInjector(preferredMethod = method)
             if (injector == null) {
-                _errorState.value = "Selected input method is not available. Enable Shizuku or Accessibility Service."
+                _errorState.value = "所选的输入方式不可用。请启用 Shizuku 或无障碍服务。"
                 disconnect()
                 return@launch
             }
 
             val connected = injector.connect()
             if (!connected) {
-                _errorState.value = "Failed to connect to input method: ${injector.name}"
+                _errorState.value = "连接输入方式失败：${injector.name}"
                 disconnect()
                 return@launch
             }
@@ -256,11 +256,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             val pkcs12 = try {
                 readClientCertificate(uri)
             } catch (_: IllegalArgumentException) {
-                _errorState.value = "Client certificate must be smaller than 16 MB"
+                _errorState.value = "客户端证书必须小于 16 MB"
                 return@launch
             } catch (error: Exception) {
                 Log.e("InputLeaf", "Failed to read client certificate", error)
-                _errorState.value = "Could not read the selected certificate file"
+                _errorState.value = "无法读取所选的证书文件"
                 return@launch
             }
             val passwordChars = password.toCharArray()
@@ -346,7 +346,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 deferred.await()
             }
             service!!.onConnectionRejected = {
-                _errorState.value = "Connection not trusted"
+                _errorState.value = "连接未受信任"
             }
             service!!.onConnectionFailed = { reason, detail ->
                 _errorState.value = connectionFailureMessage(reason, detail)
@@ -380,7 +380,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val currentState = service?.state?.value ?: _connectionState.value
                     if (auto && !lastIp.isNullOrBlank() && currentState is ConnectionState.Disconnected) {
                         Log.i("InputLeaf", "Shizuku became available — auto-connecting to last server: $lastIp")
-                        if (_errorState.value?.contains("input method", ignoreCase = true) == true ||
+                        if (_errorState.value?.contains("输入方式", ignoreCase = true) == true ||
                             _errorState.value?.contains("Shizuku", ignoreCase = true) == true
                         ) {
                             _errorState.value = null
@@ -506,13 +506,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             
             val injector = resolveInjector()
             if (injector == null) {
-                _errorState.value = "No input method available. Enable Shizuku or Accessibility Service."
+                _errorState.value = "没有可用的输入方式。请启用 Shizuku 或无障碍服务。"
                 return@launch
             }
             
             val connected = injector.connect()
             if (!connected) {
-                _errorState.value = "Failed to connect to input method: ${injector.name}"
+                _errorState.value = "连接输入方式失败：${injector.name}"
                 return@launch
             }
             

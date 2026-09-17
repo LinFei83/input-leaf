@@ -89,21 +89,21 @@ fun OnboardingScreen(
                     0 -> WelcomePage()
                     1 -> PermissionPage(
                         icon = Icons.Rounded.Security,
-                        title = "Shizuku Setup (Optional)",
-                        description = "Shizuku lets Input Leaf inject mouse & keyboard events at the system level — the most powerful input method. Skip if you prefer Accessibility Service instead.",
-                        whyNeeded = "Shizuku provides low-latency, root-equivalent input injection without actually rooting your device. If Shizuku is unavailable, you can use the Accessibility Service on the next page.",
+                        title = "Shizuku 设置（可选）",
+                        description = "Shizuku 可让 Input Leaf 在系统层面注入鼠标和键盘事件，是最强大的输入方式。如果你更倾向使用无障碍服务，可以跳过此页。",
+                        whyNeeded = "Shizuku 无需真正 root 设备，即可提供低延迟、等效于 root 的输入注入。如果无法使用 Shizuku，你可以使用下一页的无障碍服务。",
                         isGranted = shizukuStatus == ShizukuStatus.READY,
                         statusText = when (shizukuStatus) {
-                            ShizukuStatus.READY -> "Ready ✓"
-                            ShizukuStatus.NOT_INSTALLED -> "Not installed"
-                            ShizukuStatus.NOT_RUNNING -> "Not running"
-                            ShizukuStatus.PERMISSION_REQUIRED -> "Permission needed"
-                            ShizukuStatus.CHECKING -> "Checking..."
+                            ShizukuStatus.READY -> "就绪 ✓"
+                            ShizukuStatus.NOT_INSTALLED -> "未安装"
+                            ShizukuStatus.NOT_RUNNING -> "未运行"
+                            ShizukuStatus.PERMISSION_REQUIRED -> "需要授权"
+                            ShizukuStatus.CHECKING -> "检查中…"
                         },
                         actionLabel = when (shizukuStatus) {
-                            ShizukuStatus.NOT_INSTALLED -> "Install Shizuku"
-                            ShizukuStatus.NOT_RUNNING -> "Open Shizuku"
-                            ShizukuStatus.PERMISSION_REQUIRED -> "Grant Permission"
+                            ShizukuStatus.NOT_INSTALLED -> "安装 Shizuku"
+                            ShizukuStatus.NOT_RUNNING -> "打开 Shizuku"
+                            ShizukuStatus.PERMISSION_REQUIRED -> "授予权限"
                             else -> null
                         },
                         onAction = when (shizukuStatus) {
@@ -123,12 +123,12 @@ fun OnboardingScreen(
                     )
                     2 -> PermissionPage(
                         icon = Icons.Rounded.Accessibility,
-                        title = "Accessibility Service",
-                        description = "Enable Input Leaf's Accessibility Service — a no-root, no-Shizuku way to inject touch events. Works on any Android device.",
-                        whyNeeded = "The Accessibility Service lets Input Leaf simulate taps without Shizuku. It works on stock Android with zero extra apps.",
+                        title = "无障碍服务",
+                        description = "启用 Input Leaf 的无障碍服务——一种无需 root、无需 Shizuku 即可注入触摸事件的方式。适用于任何 Android 设备。",
+                        whyNeeded = "无障碍服务让 Input Leaf 无需 Shizuku 即可模拟点击。它无需任何额外应用，即可在原版 Android 上运行。",
                         isGranted = accessibilityAvailable,
-                        statusText = if (accessibilityAvailable) "Enabled ✓" else "Disabled",
-                        actionLabel = if (!accessibilityAvailable) "Open Accessibility Settings" else null,
+                        statusText = if (accessibilityAvailable) "已启用 ✓" else "已禁用",
+                        actionLabel = if (!accessibilityAvailable) "打开无障碍设置" else null,
                         onAction = {
                             val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
                                 val comp = ComponentName(
@@ -143,32 +143,32 @@ fun OnboardingScreen(
                     )
                     3 -> PermissionPage(
                         icon = Icons.Default.Warning,
-                        title = "Virtual Keyboard",
-                        description = "Required to inject hardware keyboard shortcuts like Ctrl+C and Alt+Tab.",
-                        whyNeeded = "To fully mimic a physical keyboard without Shizuku, Input Leaf uses a custom Virtual Keyboard. You need to enable it and set it as your active keyboard.",
+                        title = "虚拟键盘",
+                        description = "注入 Ctrl+C、Alt+Tab 等硬件键盘快捷键时需要此项。",
+                        whyNeeded = "为了在没有 Shizuku 的情况下完全模拟物理键盘，Input Leaf 使用自定义虚拟键盘。你需要启用它，并将其设为当前使用的键盘。",
                         isGranted = imeEnabledAndSelected,
-                        statusText = if (imeEnabledAndSelected) "Selected ✓" else "Not selected",
-                        actionLabel = if (!imeEnabledAndSelected) "Select Keyboard" else null,
+                        statusText = if (imeEnabledAndSelected) "已选择 ✓" else "未选择",
+                        actionLabel = if (!imeEnabledAndSelected) "选择键盘" else null,
                         onAction = onRequestImeSetup
                     )
                     4 -> PermissionPage(
                         icon = Icons.Rounded.Visibility,
-                        title = "Overlay Permission",
-                        description = "Allows Input Leaf to display a cursor on your screen when your computer's mouse moves to this device.",
-                        whyNeeded = "Android requires explicit permission to draw over other apps. This is needed to show the cursor overlay so you can see where the mouse pointer is on your phone.",
+                        title = "悬浮窗权限",
+                        description = "允许 Input Leaf 在电脑鼠标移到此设备时，在你的屏幕上显示光标。",
+                        whyNeeded = "Android 要求获得明确授权才能在其他应用上层绘制内容。需要此权限来显示光标悬浮层，以便你看到鼠标指针在手机上的位置。",
                         isGranted = canDrawOverlays,
-                        statusText = if (canDrawOverlays) "Granted ✓" else "Not granted",
-                        actionLabel = if (!canDrawOverlays) "Grant Permission" else null,
+                        statusText = if (canDrawOverlays) "已授予 ✓" else "未授予",
+                        actionLabel = if (!canDrawOverlays) "授予权限" else null,
                         onAction = onRequestOverlayPermission
                     )
                     5 -> PermissionPage(
                         icon = Icons.Rounded.BatteryChargingFull,
-                        title = "Battery Optimization",
-                        description = "Prevents Android from killing the connection when your phone goes to sleep.\n\nGo to: Battery usage → Allow background activity",
-                        whyNeeded = "Android aggressively kills background apps to save battery. Exempting Input Leaf ensures your KVM connection stays alive even when the screen is off.",
+                        title = "电池优化",
+                        description = "防止 Android 在手机休眠时断开连接。\n\n前往：电池用量 → 允许后台活动",
+                        whyNeeded = "Android 会为节省电量而激进地结束后台应用。将 Input Leaf 设为豁免可确保屏幕关闭时 KVM 连接依然保持。",
                         isGranted = batteryOptimizationExempt,
-                        statusText = if (batteryOptimizationExempt) "Exempted ✓" else "Not exempted",
-                        actionLabel = if (!batteryOptimizationExempt) "Open App Info" else null,
+                        statusText = if (batteryOptimizationExempt) "已豁免 ✓" else "未豁免",
+                        actionLabel = if (!batteryOptimizationExempt) "打开应用信息" else null,
                         onAction = onRequestBatteryOptimization
                     )
                 }
@@ -183,21 +183,21 @@ fun OnboardingScreen(
             ) {
                 if (currentPage > 0) {
                     OutlinedButton(onClick = { currentPage-- }) {
-                        Text("Back")
+                        Text("返回")
                     }
                 } else {
                     TextButton(onClick = onComplete) {
-                        Text("Skip")
+                        Text("跳过")
                     }
                 }
 
                 if (currentPage < totalPages - 1) {
                     Button(onClick = { currentPage++ }) {
-                        Text("Next")
+                        Text("下一步")
                     }
                 } else {
                     Button(onClick = onComplete) {
-                        Text("Get Started")
+                        Text("开始使用")
                     }
                 }
             }
@@ -216,14 +216,14 @@ private fun WelcomePage() {
 
         Image(
             painter = painterResource(id = R.drawable.ic_splash_logo),
-            contentDescription = "Input Leaf Logo",
+            contentDescription = "Input Leaf 标志",
             modifier = Modifier.size(120.dp)
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = "Welcome to Input Leaf",
+            text = "欢迎使用 Input Leaf",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
@@ -232,7 +232,7 @@ private fun WelcomePage() {
         Spacer(modifier = Modifier.height(12.dp))
 
         Text(
-            text = "Share your computer's keyboard and mouse with your Android device — seamlessly.",
+            text = "将电脑的键盘和鼠标无缝共享给你的 Android 设备。",
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -245,18 +245,18 @@ private fun WelcomePage() {
             shape = RoundedCornerShape(16.dp)
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
-                FeatureItem(Icons.Rounded.Mouse, "Mouse sharing", "Move your cursor from your PC to your phone")
+                FeatureItem(Icons.Rounded.Mouse, "鼠标共享", "将光标从电脑移动到手机")
                 Spacer(modifier = Modifier.height(12.dp))
-                FeatureItem(Icons.Rounded.Keyboard, "Keyboard sharing", "Type on your phone using your computer's keyboard")
+                FeatureItem(Icons.Rounded.Keyboard, "键盘共享", "使用电脑的键盘在手机上输入")
                 Spacer(modifier = Modifier.height(12.dp))
-                FeatureItem(Icons.Rounded.Lock, "Secure connection", "TLS encrypted, trust-on-first-use")
+                FeatureItem(Icons.Rounded.Lock, "安全连接", "TLS 加密，首次使用即信任")
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Android extension of Input Leap — Open Source KVM",
+            text = "Input Leap 的 Android 扩展——开源 KVM",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -382,7 +382,7 @@ private fun PermissionPage(
                 modifier = Modifier.size(18.dp)
             )
             Spacer(modifier = Modifier.width(4.dp))
-            Text("Why do we need this?")
+            Text("为什么需要这项权限？")
         }
 
         AnimatedVisibility(
@@ -434,7 +434,7 @@ private fun PermissionPage(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            "All set!",
+                            "全部就绪！",
                             color = MaterialTheme.colorScheme.onTertiaryContainer,
                             fontWeight = FontWeight.SemiBold
                         )

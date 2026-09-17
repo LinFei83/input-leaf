@@ -38,7 +38,7 @@ fun ServerListScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Servers",
+                        text = "服务器",
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleLarge,
                         letterSpacing = 0.5.sp
@@ -57,7 +57,7 @@ fun ServerListScreen(
                     ListItem(
                         headlineContent = {
                             Text(
-                                "Favorites",
+                                "收藏",
                                 style = MaterialTheme.typography.titleMedium
                             )
                         },
@@ -89,7 +89,7 @@ fun ServerListScreen(
                 ListItem(
                     headlineContent = {
                         Text(
-                            "Discovered Servers",
+                            "已发现的服务器",
                             style = MaterialTheme.typography.titleMedium
                         )
                     }
@@ -118,7 +118,7 @@ fun ServerListScreen(
                         contentAlignment = androidx.compose.ui.Alignment.Center
                     ) {
                         Text(
-                            text = "No servers found. Try scanning again.",
+                            text = "未找到服务器。请尝试重新扫描。",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -143,13 +143,13 @@ fun ServerListScreen(
                             CircularProgressIndicator(Modifier.size(16.dp))
                             Spacer(Modifier.width(8.dp))
                         }
-                        Text("Scan Again")
+                        Text("重新扫描")
                     }
                     OutlinedButton(
                         onClick = { showAddDialog = true },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Add Manually")
+                        Text("手动添加")
                     }
                 }
             }
@@ -159,12 +159,12 @@ fun ServerListScreen(
     if (showAddDialog) {
         AlertDialog(
             onDismissRequest = { showAddDialog = false },
-            title = { Text("Add Server") },
+            title = { Text("添加服务器") },
             text = {
                 OutlinedTextField(
                     value = manualIp,
                     onValueChange = { manualIp = it },
-                    label = { Text("IP Address") },
+                    label = { Text("IP 地址") },
                     singleLine = true
                 )
             },
@@ -174,7 +174,7 @@ fun ServerListScreen(
                     manualIp = ""
                     showAddDialog = false
                 }) {
-                    Text("Add")
+                    Text("添加")
                 }
             },
             dismissButton = {
@@ -182,7 +182,7 @@ fun ServerListScreen(
                     manualIp = ""
                     showAddDialog = false
                 }) {
-                    Text("Cancel")
+                    Text("取消")
                 }
             }
         )

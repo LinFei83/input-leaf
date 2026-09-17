@@ -82,9 +82,9 @@ fun SettingsScreen(
     val installSource = remember(context) { UpdateService.getInstallSource(context) }
     val installSourceLabel = remember(installSource) {
         when (installSource) {
-            InstallSource.FDROID -> "Installed via F-Droid"
-            InstallSource.PLAY_STORE -> "Installed via Play Store"
-            InstallSource.GITHUB -> "Installed via GitHub / Direct APK"
+            InstallSource.FDROID -> "通过 F-Droid 安装"
+            InstallSource.PLAY_STORE -> "通过 Play Store 安装"
+            InstallSource.GITHUB -> "通过 GitHub / 直接安装 APK"
         }
     }
 
@@ -103,7 +103,7 @@ fun SettingsScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Settings",
+                        text = "设置",
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleLarge,
                         letterSpacing = 0.5.sp
@@ -111,7 +111,7 @@ fun SettingsScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back")
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, "返回")
                     }
                 }
             )
@@ -125,7 +125,7 @@ fun SettingsScreen(
                 .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
             // Connection Section
-            SectionHeader("CONNECTION")
+            SectionHeader("连接")
             
             GradientCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -137,7 +137,7 @@ fun SettingsScreen(
                     // Screen Name
                     SettingsRow(
                         icon = Icons.Rounded.Phone,
-                        title = "Screen name",
+                        title = "屏幕名称",
                         subtitle = screenName,
                         onClick = { showEditNameDialog = true }
                     )
@@ -149,7 +149,7 @@ fun SettingsScreen(
                     // Auto-connect
                     SettingsRow(
                         icon = Icons.Rounded.Build,
-                        title = "Auto-connect on launch",
+                        title = "启动时自动连接",
                         trailingContent = {
                             MaterialToggleSwitch(
                                 checked = autoConnect,
@@ -164,11 +164,11 @@ fun SettingsScreen(
                     )
                     SettingsRow(
                         icon = Icons.Rounded.Lock,
-                        title = "Connection security",
+                        title = "连接安全",
                         subtitle = when (connectionTransportPolicy) {
-                            ConnectionTransportPolicy.AUTO -> "Auto (recommended)"
-                            ConnectionTransportPolicy.TLS_ONLY -> "TLS only"
-                            ConnectionTransportPolicy.PLAIN_ONLY -> "Plain only"
+                            ConnectionTransportPolicy.AUTO -> "自动（推荐）"
+                            ConnectionTransportPolicy.TLS_ONLY -> "仅 TLS"
+                            ConnectionTransportPolicy.PLAIN_ONLY -> "仅明文"
                         },
                         onClick = { showTransportPolicyDialog = true }
                     )
@@ -180,11 +180,11 @@ fun SettingsScreen(
                     // Input Method
                     SettingsRow(
                         icon = Icons.Rounded.Keyboard,
-                        title = "Input method",
+                        title = "输入方式",
                         subtitle = when (inputMethod) {
-                            "shizuku" -> "Shizuku (ADB-level injection)"
-                            "accessibility" -> "Accessibility Service (no extra app)"
-                            else -> "Auto (Recommended)"
+                            "shizuku" -> "Shizuku（ADB 级别注入）"
+                            "accessibility" -> "无障碍服务（无需额外应用）"
+                            else -> "自动（推荐）"
                         },
                         onClick = { showInputMethodDialog = true }
                     )
@@ -194,7 +194,7 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // Display Section
-            SectionHeader("DISPLAY")
+            SectionHeader("显示")
             
             GradientCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -222,13 +222,13 @@ fun SettingsScreen(
                             Spacer(modifier = Modifier.width(12.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Overlay permission required",
+                                    text = "需要悬浮窗权限",
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onErrorContainer,
                                     style = MaterialTheme.typography.bodyMedium
                                 )
                                 Text(
-                                    text = "Required to show cursor on screen",
+                                    text = "用于在屏幕上显示光标",
                                     color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f),
                                     style = MaterialTheme.typography.bodySmall
                                 )
@@ -238,14 +238,14 @@ fun SettingsScreen(
                             onClick = onRequestOverlayPermission,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                         ) {
-                            Text("Grant Permission", color = MaterialTheme.colorScheme.primary)
+                            Text("授予权限", color = MaterialTheme.colorScheme.primary)
                         }
                     }
                     // Show Cursor toggle
                     SettingsRow(
                         icon = Icons.Rounded.Info,
-                        title = "Show cursor overlay",
-                        subtitle = if (canDrawOverlays) "Display cursor when active" else "Grant permission first",
+                        title = "显示光标悬浮层",
+                        subtitle = if (canDrawOverlays) "连接激活时显示光标" else "请先授予权限",
                         trailingContent = {
                             MaterialToggleSwitch(
                                 checked = showCursor,
@@ -257,8 +257,8 @@ fun SettingsScreen(
                     if (showCursor && canDrawOverlays) {
                         SettingsRow(
                             icon = Icons.Rounded.Edit,
-                            title = "Cursor style",
-                            subtitle = if (cursorStyle == "leaf") "Input Leaf custom" else "Android default",
+                            title = "光标样式",
+                            subtitle = if (cursorStyle == "leaf") "Input Leaf 自定义" else "Android 默认",
                             onClick = { showCursorStyleDialog = true }
                         )
                         if (shizukuAvailable && (inputMethod == "auto" || inputMethod == "shizuku")) {
@@ -282,13 +282,13 @@ fun SettingsScreen(
                                     )
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
-                                            text = "Cursor in notification panel",
+                                            text = "通知面板中的光标",
                                             style = MaterialTheme.typography.labelMedium,
                                             fontWeight = FontWeight.SemiBold,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
-                                            text = "Enable Accessibility Service for cursor visibility over the notification shade.",
+                                            text = "启用无障碍服务，以便在通知栏上方显示光标。",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -308,7 +308,7 @@ fun SettingsScreen(
                                             }
                                             context.startActivity(intent)
                                         } catch (_: Exception) {
-                                            Toast.makeText(context, "Unable to open Accessibility Settings", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, "无法打开无障碍设置", Toast.LENGTH_SHORT).show()
                                         }
                                     },
                                 color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
@@ -326,13 +326,13 @@ fun SettingsScreen(
                                     )
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
-                                            text = "Cursor in notification panel",
+                                            text = "通知面板中的光标",
                                             style = MaterialTheme.typography.labelMedium,
                                             fontWeight = FontWeight.SemiBold,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
-                                            text = "Enable Accessibility Service for cursor visibility over the notification shade.",
+                                            text = "启用无障碍服务，以便在通知栏上方显示光标。",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -350,11 +350,11 @@ fun SettingsScreen(
                     // Theme setting
                     SettingsRow(
                         icon = Icons.Rounded.Settings,
-                        title = "Theme",
+                        title = "主题",
                         subtitle = when (themeMode) {
-                            "LIGHT" -> "Light"
-                            "DARK" -> "Dark"
-                            else -> "System default"
+                            "LIGHT" -> "浅色"
+                            "DARK" -> "深色"
+                            else -> "跟随系统"
                         },
                         onClick = { showThemeDialog = true }
                     )
@@ -363,7 +363,7 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            SectionHeader("SECURITY")
+            SectionHeader("安全")
 
             GradientCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -374,11 +374,11 @@ fun SettingsScreen(
                 Column {
                     SettingsRow(
                         icon = Icons.Rounded.Badge,
-                        title = "This device's fingerprint",
+                        title = "本设备指纹",
                         subtitle = clientCertificateSummary?.let { summary ->
                             TlsFingerprintManager.formatFingerprint(summary.fingerprint.take(16)) +
                                 "…"
-                        } ?: "Creating a certificate for this device…",
+                        } ?: "正在为本设备创建证书…",
                         onClick = { if (clientCertificateSummary != null) showLocalFingerprint = true },
                         trailingContent = {
                             IconButton(
@@ -387,7 +387,7 @@ fun SettingsScreen(
                             ) {
                                 Icon(
                                     Icons.Rounded.Refresh,
-                                    contentDescription = "Regenerate certificate",
+                                    contentDescription = "重新生成证书",
                                     tint = MaterialTheme.colorScheme.outline,
                                 )
                             }
@@ -401,8 +401,8 @@ fun SettingsScreen(
                     // Trusted servers header
                     SettingsRow(
                         icon = Icons.Rounded.Lock,
-                        title = "Trusted servers",
-                        subtitle = "${fingerprints.size} server${if (fingerprints.size != 1) "s" else ""}",
+                        title = "受信任的服务器",
+                        subtitle = "${fingerprints.size} 台服务器",
                     )
                     // Server entries
                     fingerprints.entries.forEachIndexed { index, (ip, fp) ->
@@ -435,7 +435,7 @@ fun SettingsScreen(
                             IconButton(onClick = { onDeleteFingerprint(ip) }) {
                                 Icon(
                                     Icons.Rounded.Delete,
-                                    contentDescription = "Remove",
+                                    contentDescription = "移除",
                                     tint = MaterialTheme.colorScheme.outline
                                 )
                             }
@@ -447,7 +447,7 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // About & Community Section
-            SectionHeader("ABOUT & COMMUNITY")
+            SectionHeader("关于与社区")
 
             GradientCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -466,7 +466,7 @@ fun SettingsScreen(
                     ) {
                         Image(
                             painter = painterResource(id = com.inputleaf.android.R.drawable.ic_splash_logo),
-                            contentDescription = "Input Leaf Logo",
+                            contentDescription = "Input Leaf 标志",
                             modifier = Modifier
                                 .size(52.dp)
                                 .clip(RoundedCornerShape(12.dp))
@@ -497,7 +497,7 @@ fun SettingsScreen(
                             }
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Open-source Android client for Input Leap",
+                                text = "Input Leap 的开源 Android 客户端",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -513,8 +513,8 @@ fun SettingsScreen(
                     // Check for updates
                     SettingsRow(
                         icon = Icons.Rounded.Sync,
-                        title = "Check for updates",
-                        subtitle = if (isCheckingUpdate) "Checking latest release…" else "v$versionName · $installSourceLabel",
+                        title = "检查更新",
+                        subtitle = if (isCheckingUpdate) "正在检查最新版本…" else "v$versionName · $installSourceLabel",
                         onClick = onCheckForUpdates,
                         trailingContent = if (isCheckingUpdate) {
                             {
@@ -536,7 +536,7 @@ fun SettingsScreen(
                     // GitHub Repository
                     SettingsRow(
                         painter = painterResource(id = com.inputleaf.android.R.drawable.ic_brand_github),
-                        title = "GitHub Repository",
+                        title = "GitHub 仓库",
                         subtitle = "anasvhora284/input-leaf",
                         onClick = { openUrl(context, "https://github.com/anasvhora284/input-leaf") }
                     )
@@ -550,8 +550,8 @@ fun SettingsScreen(
                     // Contributors
                     SettingsRow(
                         icon = Icons.Rounded.Group,
-                        title = "Contributors",
-                        subtitle = "View contributors on GitHub",
+                        title = "贡献者",
+                        subtitle = "在 GitHub 上查看贡献者",
                         onClick = { openUrl(context, "https://github.com/anasvhora284/input-leaf/graphs/contributors") }
                     )
 
@@ -564,8 +564,8 @@ fun SettingsScreen(
                     // Report an Issue
                     SettingsRow(
                         icon = Icons.Rounded.BugReport,
-                        title = "Report an Issue",
-                        subtitle = "GitHub issues & feature requests",
+                        title = "报告问题",
+                        subtitle = "GitHub 问题反馈与功能建议",
                         onClick = { openUrl(context, "https://github.com/anasvhora284/input-leaf/issues") }
                     )
                 }
@@ -574,7 +574,7 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // Author Info Section
-            SectionHeader("DEVELOPER")
+            SectionHeader("开发者")
 
             GradientCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -585,8 +585,8 @@ fun SettingsScreen(
                 Column {
                     SettingsRow(
                         icon = Icons.Rounded.Person,
-                        title = "Author Info",
-                        subtitle = "Anas Vhora · Connect & Socials",
+                        title = "作者信息",
+                        subtitle = "Anas Vhora · 联系与社交",
                         onClick = { showAuthorDialog = true }
                     )
                 }
@@ -607,18 +607,18 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "Made with ",
+                        text = "由 ",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Icon(
                         imageVector = Icons.Rounded.Favorite,
-                        contentDescription = "Love",
+                        contentDescription = "爱心",
                         tint = Color(0xFFE11D48),
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
-                        text = " by",
+                        text = " 打造",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -639,12 +639,12 @@ fun SettingsScreen(
                             .padding(horizontal = 4.dp, vertical = 2.dp)
                     )
                     Text(
-                        text = " & ",
+                        text = " 与 ",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = "input-leaf contributors",
+                        text = "input-leaf 贡献者",
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
@@ -679,11 +679,10 @@ fun SettingsScreen(
     if (showRegenerateConfirm) {
         AlertDialog(
             onDismissRequest = { showRegenerateConfirm = false },
-            title = { Text("Regenerate certificate?") },
+            title = { Text("重新生成证书？") },
             text = {
                 Text(
-                    "Deskflow will ask you to trust this phone again. Only regenerate if you " +
-                        "want a new identity."
+                    "Deskflow 会再次要求你信任这台手机。只有在你需要新的身份时才重新生成。"
                 )
             },
             confirmButton = {
@@ -693,12 +692,12 @@ fun SettingsScreen(
                         onRegenerateClientCertificate()
                     }
                 ) {
-                    Text("Regenerate")
+                    Text("重新生成")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showRegenerateConfirm = false }) {
-                    Text("Cancel")
+                    Text("取消")
                 }
             },
         )
@@ -707,11 +706,11 @@ fun SettingsScreen(
     if (showThemeDialog) {
         AlertDialog(
             onDismissRequest = { showThemeDialog = false },
-            title = { Text("Select Theme") },
+            title = { Text("选择主题") },
             text = {
                 Column {
                     ThemeModeOption(
-                        text = "System default",
+                        text = "跟随系统",
                         selected = themeMode == "SYSTEM",
                         onClick = {
                             onThemeModeChange("SYSTEM")
@@ -719,7 +718,7 @@ fun SettingsScreen(
                         }
                     )
                     ThemeModeOption(
-                        text = "Light",
+                        text = "浅色",
                         selected = themeMode == "LIGHT",
                         onClick = {
                             onThemeModeChange("LIGHT")
@@ -727,7 +726,7 @@ fun SettingsScreen(
                         }
                     )
                     ThemeModeOption(
-                        text = "Dark",
+                        text = "深色",
                         selected = themeMode == "DARK",
                         onClick = {
                             onThemeModeChange("DARK")
@@ -738,7 +737,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showThemeDialog = false }) {
-                    Text("Cancel")
+                    Text("取消")
                 }
             }
         )
@@ -747,13 +746,13 @@ fun SettingsScreen(
     if (showTransportPolicyDialog) {
         AlertDialog(
             onDismissRequest = { showTransportPolicyDialog = false },
-            title = { Text("Connection Security") },
+            title = { Text("连接安全") },
             text = {
                 Column {
                     SettingsChoiceOption(
-                        text = "Auto (Recommended)",
+                        text = "自动（推荐）",
                         selected = connectionTransportPolicy == ConnectionTransportPolicy.AUTO,
-                        status = "Use the last working mode, with fallback",
+                        status = "使用上次可用的模式，并自动回退",
                         statusColor = Color.Gray,
                         onClick = {
                             onConnectionTransportPolicyChange(ConnectionTransportPolicy.AUTO)
@@ -761,9 +760,9 @@ fun SettingsScreen(
                         }
                     )
                     SettingsChoiceOption(
-                        text = "TLS only",
+                        text = "仅 TLS",
                         selected = connectionTransportPolicy == ConnectionTransportPolicy.TLS_ONLY,
-                        status = "Require an encrypted Deskflow connection",
+                        status = "要求使用加密的 Deskflow 连接",
                         statusColor = Color.Gray,
                         onClick = {
                             onConnectionTransportPolicyChange(ConnectionTransportPolicy.TLS_ONLY)
@@ -771,9 +770,9 @@ fun SettingsScreen(
                         }
                     )
                     SettingsChoiceOption(
-                        text = "Plain only",
+                        text = "仅明文",
                         selected = connectionTransportPolicy == ConnectionTransportPolicy.PLAIN_ONLY,
-                        status = "Never attempt TLS",
+                        status = "从不尝试 TLS",
                         statusColor = Color.Gray,
                         onClick = {
                             onConnectionTransportPolicyChange(ConnectionTransportPolicy.PLAIN_ONLY)
@@ -784,7 +783,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showTransportPolicyDialog = false }) {
-                    Text("Cancel")
+                    Text("取消")
                 }
             }
         )
@@ -793,13 +792,13 @@ fun SettingsScreen(
     if (showInputMethodDialog) {
         AlertDialog(
             onDismissRequest = { showInputMethodDialog = false },
-            title = { Text("Select Input Method") },
+            title = { Text("选择输入方式") },
             text = {
                 Column {
                     SettingsChoiceOption(
-                        text = "Auto (Recommended)",
+                        text = "自动（推荐）",
                         selected = inputMethod == "auto",
-                        status = "Available",
+                        status = "可用",
                         statusColor = Color.Gray,
                         onClick = {
                             onInputMethodChange("auto")
@@ -809,7 +808,7 @@ fun SettingsScreen(
                     SettingsChoiceOption(
                         text = "Shizuku",
                         selected = inputMethod == "shizuku",
-                        status = if (shizukuAvailable) "Available" else "Not running",
+                        status = if (shizukuAvailable) "可用" else "未运行",
                         statusColor = if (shizukuAvailable) Color(0xFF4CAF50) else Color.Red,
                         onClick = {
                             onInputMethodChange("shizuku")
@@ -817,9 +816,9 @@ fun SettingsScreen(
                         }
                     )
                     SettingsChoiceOption(
-                        text = "Accessibility Service",
+                        text = "无障碍服务",
                         selected = inputMethod == "accessibility",
-                        status = if (accessibilityAvailable) "Enabled" else "Disabled",
+                        status = if (accessibilityAvailable) "已启用" else "已禁用",
                         statusColor = if (accessibilityAvailable) Color(0xFF4CAF50) else Color.Red,
                         onClick = {
                             onInputMethodChange("accessibility")
@@ -830,7 +829,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showInputMethodDialog = false }) {
-                    Text("Cancel")
+                    Text("取消")
                 }
             }
         )
@@ -840,12 +839,12 @@ fun SettingsScreen(
         var newName by remember { mutableStateOf(screenName) }
         AlertDialog(
             onDismissRequest = { showEditNameDialog = false },
-            title = { Text("Screen Name") },
+            title = { Text("屏幕名称") },
             text = {
                 OutlinedTextField(
                     value = newName,
                     onValueChange = { newName = it },
-                    label = { Text("Name") },
+                    label = { Text("名称") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -860,12 +859,12 @@ fun SettingsScreen(
                     },
                     enabled = newName.isNotBlank()
                 ) {
-                    Text("Save")
+                    Text("保存")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showEditNameDialog = false }) {
-                    Text("Cancel")
+                    Text("取消")
                 }
             }
         )
@@ -876,7 +875,7 @@ fun SettingsScreen(
             onDismissRequest = { showCursorStyleDialog = false },
             title = {
                 Text(
-                    text = "Select Cursor Style",
+                    text = "选择光标样式",
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -925,7 +924,7 @@ fun SettingsScreen(
                             ) {
                                 Image(
                                     painter = painterResource(id = com.inputleaf.android.R.drawable.ic_cursor_aosp),
-                                    contentDescription = "Default Cursor",
+                                    contentDescription = "默认光标",
                                     modifier = Modifier
                                         .size(36.dp)
                                         .graphicsLayer(scaleX = 1f)
@@ -933,7 +932,7 @@ fun SettingsScreen(
                             }
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "Default",
+                                text = "默认",
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = if (cursorStyle == "default")
@@ -986,7 +985,7 @@ fun SettingsScreen(
                             ) {
                                 Image(
                                     painter = painterResource(id = com.inputleaf.android.R.drawable.cursor),
-                                    contentDescription = "Leaf Cursor",
+                                    contentDescription = "Leaf 光标",
                                     modifier = Modifier
                                         .size(36.dp)
                                         .graphicsLayer(scaleX = -1f)
@@ -1008,7 +1007,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showCursorStyleDialog = false }) {
-                    Text("Close", color = MaterialTheme.colorScheme.primary)
+                    Text("关闭", color = MaterialTheme.colorScheme.primary)
                 }
             }
         )
@@ -1034,7 +1033,7 @@ fun SettingsScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Person,
-                        contentDescription = "Author",
+                        contentDescription = "作者",
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(32.dp)
                     )
@@ -1053,7 +1052,7 @@ fun SettingsScreen(
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "Developer & Maintainer",
+                        text = "开发者与维护者",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1079,13 +1078,13 @@ fun SettingsScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.Language,
-                                contentDescription = "Website",
+                                contentDescription = "网站",
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(24.dp)
                             )
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Personal Website",
+                                    text = "个人网站",
                                     style = MaterialTheme.typography.labelLarge,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -1190,7 +1189,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showAuthorDialog = false }) {
-                    Text("Close", color = MaterialTheme.colorScheme.primary)
+                    Text("关闭", color = MaterialTheme.colorScheme.primary)
                 }
             }
         )
@@ -1235,6 +1234,6 @@ private fun openUrl(context: android.content.Context, url: String) {
         }
         context.startActivity(intent)
     } catch (_: Exception) {
-        Toast.makeText(context, "Unable to open link", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "无法打开链接", Toast.LENGTH_SHORT).show()
     }
 }

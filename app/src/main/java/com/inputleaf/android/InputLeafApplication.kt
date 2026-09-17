@@ -17,7 +17,7 @@ class InputLeafApplication : Application() {
             // Try to show a toast, though it might not always work if the main thread is dead.
             try {
                 Handler(Looper.getMainLooper()).post {
-                    Toast.makeText(applicationContext, "Input Leaf recovered from a crash.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(applicationContext, "Input Leaf 已从崩溃中恢复。", Toast.LENGTH_LONG).show()
                 }
                 Thread.sleep(1500)
             } catch (e: Exception) {

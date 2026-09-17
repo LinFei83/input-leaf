@@ -81,7 +81,7 @@ fun SettingsRow(
             } else if (onClick != null) {
                 androidx.compose.material3.Icon(
                     imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
-                    contentDescription = "Navigate",
+                    contentDescription = "导航",
                     tint = MaterialTheme.colorScheme.outline,
                 )
             }
@@ -136,7 +136,7 @@ fun SettingsRow(
             } else if (onClick != null) {
                 androidx.compose.material3.Icon(
                     imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
-                    contentDescription = "Navigate",
+                    contentDescription = "导航",
                     tint = MaterialTheme.colorScheme.outline,
                 )
             }

@@ -111,7 +111,7 @@ class ServerScanner {
                 }
                 isClientCertificateRejection(e) -> {
                     Log.d("ServerScanner", "TLS server detected at $host via client-cert requirement: ${e.message}")
-                    Pair(ServerInfo(ip = host, name = "Deskflow (TLS)", port = port), false)
+                    Pair(ServerInfo(ip = host, name = "Deskflow（TLS）", port = port), false)
                 }
                 else -> {
                     Pair(null, false)
@@ -148,7 +148,7 @@ class ServerScanner {
             socket.soTimeout = timeoutMs
             socket.tcpNoDelay = true
             val hello = readHello(host, DataInputStream(socket.inputStream))
-            hello ?: if (assumePlain) ServerInfo(ip = host, name = "Deskflow (Plain)", port = port) else null
+            hello ?: if (assumePlain) ServerInfo(ip = host, name = "Deskflow（明文）", port = port) else null
         }
     } catch (_: Exception) {
         null

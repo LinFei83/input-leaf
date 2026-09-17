@@ -13,19 +13,19 @@ object ChangelogProvider {
             versionName = "1.4.1",
             versionCode = 7,
             highlights = listOf(
-                "Added About & Community section with developer portfolio, GitHub, LinkedIn, and contributor credits.",
-                "Added update checker with intelligent F-Droid and GitHub release redirection.",
-                "Added 'What's New' changelog display upon upgrading.",
-                "Enhanced input injection performance and connection stability."
+                "新增「关于与社区」板块，包含开发者主页、GitHub、LinkedIn 与贡献者名单。",
+                "新增更新检查功能，可智能跳转到 F-Droid 或 GitHub 发布页。",
+                "升级后新增「新功能」更新日志展示。",
+                "提升输入注入性能与连接稳定性。"
             )
         ),
         VersionChangelog(
             versionName = "1.4.0",
             versionCode = 6,
             highlights = listOf(
-                "Added TLS-secured connections with TOFU certificate pinning.",
-                "Added client certificate management and custom fingerprints.",
-                "Modernized Material 3 UI with enhanced connection cards and favorites."
+                "新增基于 TOFU 证书固定（pinning）的 TLS 加密连接。",
+                "新增客户端证书管理与自定义指纹功能。",
+                "采用 Material 3 现代化界面，改进连接卡片与收藏功能。"
             )
         )
     )

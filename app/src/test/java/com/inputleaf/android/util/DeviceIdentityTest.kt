@@ -66,7 +66,7 @@ class DeviceIdentityTest {
     @Test
     fun `null identity fields use documented fallbacks`() {
         assertThat(DeviceIdentity.getManufacturerName(null)).isEqualTo("Android")
-        assertThat(DeviceIdentity.getInternalModelCode(null)).isEqualTo("Unknown")
+        assertThat(DeviceIdentity.getInternalModelCode(null)).isEqualTo("未知")
         assertThat(DeviceIdentity.getAndroidVersion(null)).isEqualTo("Android 14")
     }
 }

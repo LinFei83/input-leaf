@@ -14,19 +14,19 @@ fun FingerprintDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (oldFingerprint != null) "Certificate Changed!" else "Trust This Server?") },
+        title = { Text(if (oldFingerprint != null) "证书已更改！" else "信任此服务器？") },
         text = {
             if (oldFingerprint != null) {
-                Text("The server certificate has changed. This may indicate a security risk.\n\n" +
-                    "Old: ${formatFingerprintForDisplay(oldFingerprint)}\n\n" +
-                    "New: ${formatFingerprintForDisplay(fingerprint)}")
+                Text("服务器证书已更改。这可能意味着安全风险。\n\n" +
+                    "旧：${formatFingerprintForDisplay(oldFingerprint)}\n\n" +
+                    "新：${formatFingerprintForDisplay(fingerprint)}")
             } else {
-                Text("Verify this fingerprint matches what Deskflow shows on your PC:\n\n" +
+                Text("请验证此指纹与 PC 上 Deskflow 显示的指纹一致：\n\n" +
                     formatFingerprintForDisplay(fingerprint), fontFamily = FontFamily.Monospace)
             }
         },
-        confirmButton = { TextButton(onClick = onConfirm) { Text("Trust") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        confirmButton = { TextButton(onClick = onConfirm) { Text("信任") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } }
     )
 }
 
@@ -39,20 +39,20 @@ fun LocalFingerprintDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("This device's fingerprint") },
+        title = { Text("此设备的指纹") },
         text = {
             Text(
-                "Compare this with Deskflow when it asks to trust a new client.\n\n" +
+                "当 Deskflow 请求信任新客户端时，请与此指纹进行比对。\n\n" +
                     formatFingerprintForDisplay(fingerprint),
                 fontFamily = FontFamily.Monospace,
             )
         },
         confirmButton = {
-            TextButton(onClick = onImport) { Text("Import PKCS12") }
-            TextButton(onClick = onDismiss) { Text("Close") }
+            TextButton(onClick = onImport) { Text("导入 PKCS12") }
+            TextButton(onClick = onDismiss) { Text("关闭") }
         },
         dismissButton = {
-            TextButton(onClick = onRegenerate) { Text("Regenerate") }
+            TextButton(onClick = onRegenerate) { Text("重新生成") }
         },
     )
 }

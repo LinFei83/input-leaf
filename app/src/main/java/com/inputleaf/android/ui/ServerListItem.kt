@@ -63,7 +63,7 @@ fun ServerListItem(
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = if (isConnected) "${server.ip} • Connected" else server.ip,
+                    text = if (isConnected) "${server.ip} • 已连接" else server.ip,
                     color = if (isConnected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -77,7 +77,7 @@ fun ServerListItem(
                 ) {
                     Icon(
                         imageVector = if (isFavorite) Icons.Rounded.Star else Icons.Rounded.StarBorder,
-                        contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
+                        contentDescription = if (isFavorite) "取消收藏" else "添加到收藏",
                         tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                         modifier = Modifier.size(20.dp)
                     )
@@ -101,7 +101,7 @@ fun ServerListItem(
             } else if (onToggleFavorite == null) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
-                    contentDescription = "Navigate",
+                    contentDescription = "导航",
                     tint = MaterialTheme.colorScheme.outline,
                     modifier = Modifier.size(20.dp)
                 )

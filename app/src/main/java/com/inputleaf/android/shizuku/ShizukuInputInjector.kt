@@ -33,7 +33,7 @@ class ShizukuInputInjector(
     private val screenWidth: Int,
     private val screenHeight: Int
 ) : InputInjector {
-    override val name: String = "Shizuku (ADB-level injection)"
+    override val name: String = "Shizuku（ADB 级别注入）"
     
     var onServiceDisconnectedCallback: (() -> Unit)? = null
 

@@ -21,15 +21,15 @@ fun AdbSetupWizard(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Set Up ADB") },
+        title = { Text("设置 ADB") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("To inject keyboard and mouse events, run these commands on your PC:")
+                Text("若要注入键盘和鼠标事件，请在 PC 上运行以下命令：")
 
                 listOf(
-                    "1. Enable USB Debugging (Settings → Developer Options)",
-                    "2. Connect USB cable",
-                    "3. Run on PC:"
+                    "1. 启用 USB 调试（设置 → 开发者选项）",
+                    "2. 连接 USB 数据线",
+                    "3. 在 PC 上运行："
                 ).forEach { Text(it) }
 
                 CommandBlock(adbPushCommand) {
@@ -43,17 +43,17 @@ fun AdbSetupWizard(
                     isVerifying -> Row {
                         CircularProgressIndicator(Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Verifying…")
+                        Text("正在验证…")
                     }
-                    verifyResult == true  -> Text("✅ UHID server is running!")
-                    verifyResult == false -> Text("❌ UHID server not detected. Check commands above.")
+                    verifyResult == true  -> Text("✅ UHID 服务器正在运行！")
+                    verifyResult == false -> Text("❌ 未检测到 UHID 服务器。请检查上面的命令。")
                 }
             }
         },
         confirmButton = {
-            TextButton(onClick = onVerify, enabled = !isVerifying) { Text("Verify") }
+            TextButton(onClick = onVerify, enabled = !isVerifying) { Text("验证") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Skip") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("跳过") } }
     )
 }
 
@@ -63,7 +63,7 @@ private fun CommandBlock(command: String, onCopy: () -> Unit) {
         Row(Modifier.fillMaxWidth().padding(8.dp)) {
             Text(command, Modifier.weight(1f), style = MaterialTheme.typography.bodySmall,
                 fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
-            TextButton(onClick = onCopy) { Text("Copy") }
+            TextButton(onClick = onCopy) { Text("复制") }
         }
     }
 }

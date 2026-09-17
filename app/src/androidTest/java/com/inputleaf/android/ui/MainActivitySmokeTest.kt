@@ -59,15 +59,15 @@ class MainActivitySmokeTest {
 
     @Test
     fun freshInstallShowsOnboardingWelcomePage() {
-        waitAndAssertText("Welcome to Input Leaf")
+        waitAndAssertText("欢迎使用 Input Leaf")
     }
 
     @Test
     fun nextButtonAdvancesToShizukuPermissionPage() {
-        waitAndAssertText("Welcome to Input Leaf")
+        waitAndAssertText("欢迎使用 Input Leaf")
 
-        composeRule.onNodeWithText("Next").performClick()
+        composeRule.onNodeWithText("下一步").performClick()
 
-        waitAndAssertText("Shizuku Setup (Optional)")
+        waitAndAssertText("Shizuku 设置（可选）")
     }
 }

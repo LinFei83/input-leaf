@@ -15,7 +15,7 @@ class AccessibilityInputInjector(
     private val screenHeight: Int
 ) : InputInjector {
 
-    override val name: String = "Accessibility Service (no extra app)"
+    override val name: String = "无障碍服务（无需额外应用）"
 
     private var mouseX = 0f
     private var mouseY = 0f
